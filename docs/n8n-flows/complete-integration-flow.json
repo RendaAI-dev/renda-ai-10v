@@ -1,4 +1,7 @@
 {
+  "meta": {
+    "instanceId": "poupeja-integration"
+  },
   "name": "PoupeJá - Integração Completa N8N + Supabase + Evolution API",
   "nodes": [
     {
@@ -16,7 +19,7 @@
     },
     {
       "parameters": {
-        "jsCode": "// Processar dados do PoupeJá\nconst inputData = $input.all()[0].json;\n\nconsole.log('Dados recebidos:', JSON.stringify(inputData, null, 2));\n\n// Extrair informações\nconst {\n  event,\n  user,\n  data,\n  automationRules = {},\n  config = {}\n} = inputData;\n\n// Normalizar telefone brasileiro\nfunction normalizePhone(phone) {\n  if (!phone) return null;\n  \n  let cleanPhone = phone.replace(/\\D/g, '');\n  \n  // Remove código do país (55) se presente\n  if (cleanPhone.startsWith('55') && cleanPhone.length > 11) {\n    cleanPhone = cleanPhone.substring(2);\n  }\n  \n  // Adiciona o 9 se for celular e não tiver\n  if (cleanPhone.length === 10 && ['11', '12', '13', '14', '15', '16', '17', '18', '19', '21', '22', '24', '27', '28'].includes(cleanPhone.substring(0, 2))) {\n    cleanPhone = cleanPhone.substring(0, 2) + '9' + cleanPhone.substring(2);\n  }\n  \n  // Adiciona código do país\n  if (cleanPhone.length === 11) {\n    cleanPhone = '55' + cleanPhone;\n  }\n  \n  return cleanPhone;\n}\n\n// Construir mensagem personalizada\nfunction buildMessage(event, data, user) {\n  const messages = {\n    appointment_created: `🗓️ *Compromisso Agendado*\\n\\nOlá ${user.name}!\\n\\n📅 **${data.title}**\\n${data.description ? '📝 ' + data.description + '\\n' : ''}📆 Data: ${new Date(data.date).toLocaleDateString('pt-BR', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' })}\\n\\n✅ Seu compromisso foi registrado com sucesso!`,\n    \n    transaction_due: `💰 *Lembrete de Pagamento*\\n\\nOlá ${user.name}!\\n\\n💸 **${data.title}**\\n💵 Valor: R$ ${Number(data.amount).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}\\n📅 Vencimento: ${new Date(data.date).toLocaleDateString('pt-BR')}\\n\\n⏰ Não esqueça de fazer seu pagamento!`,\n    \n    goal_progress: `🎯 *Progresso da Meta*\\n\\nOlá ${user.name}!\\n\\n🏆 **${data.title}**\\n💰 Valor atual: R$ ${Number(data.amount).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}\\n🎯 Meta: R$ ${Number(data.metadata.target_amount).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}\\n📊 Progresso: ${data.metadata.progress_percent.toFixed(1)}%\\n\\n${data.metadata.progress_percent >= 90 ? '🎉 Parabéns! Você está quase lá!' : '💪 Continue assim, você está no caminho certo!'}`,\n    \n    budget_exceeded: `⚠️ *Orçamento Excedido*\\n\\nOlá ${user.name}!\\n\\n📊 **${data.title}**\\n💰 Orçamento: R$ ${Number(data.metadata.budget_amount).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}\\n💸 Gasto: R$ ${Number(data.metadata.spent_amount).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}\\n📈 Excesso: R$ ${Number(data.amount).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}\\n\\n💡 Que tal revisar seus gastos este mês?`,\n    \n    payment_reminder: `🔔 *Lembrete de Pagamento*\\n\\nOlá ${user.name}!\\n\\n💳 **${data.title}**\\n💰 Valor: R$ ${Number(data.amount).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}\\n📅 Vence em: ${data.metadata?.days_until || '1'} dia(s)\\n\\n⏰ Não deixe para a última hora!`\n  };\n  \n  return messages[event] || `📱 *PoupeJá*\\n\\nOlá ${user.name}!\\n\\n${data.title}\\n${data.description || ''}\\n\\nObrigado por usar o PoupeJá!`;\n}\n\n// Processar dados\nconst processedData = {\n  event,\n  user: {\n    ...user,\n    phone: normalizePhone(user.phone)\n  },\n  data,\n  automationRules,\n  message: buildMessage(event, data, user),\n  evolutionApi: {\n    instance: config.evolutionApi?.instance || 'poupeja-instance',\n    apiUrl: config.evolutionApi?.apiUrl || 'https://evolution-api.com'\n  },\n  timestamp: new Date().toISOString(),\n  shouldSendWhatsApp: automationRules.sendWhatsApp !== false && user.phone\n};\n\nconsole.log('Dados processados:', JSON.stringify(processedData, null, 2));\n\nreturn [processedData];"
+        "jsCode": "const inputData = $input.all()[0].json;\n\nfunction normalizePhone(phone) {\n  if (!phone) return null;\n  let cleanPhone = phone.replace(/\\D/g, '');\n  if (cleanPhone.startsWith('55') && cleanPhone.length > 11) {\n    cleanPhone = cleanPhone.substring(2);\n  }\n  if (cleanPhone.length === 10) {\n    cleanPhone = cleanPhone.substring(0, 2) + '9' + cleanPhone.substring(2);\n  }\n  if (cleanPhone.length === 11) {\n    cleanPhone = '55' + cleanPhone;\n  }\n  return cleanPhone;\n}\n\nfunction buildMessage(event, data, user) {\n  const messages = {\n    appointment_created: `🗓️ *Compromisso Agendado*\\n\\nOlá ${user.name}!\\n\\n📅 **${data.title}**\\n📆 Data: ${new Date(data.date).toLocaleDateString('pt-BR')}\\n\\n✅ Compromisso registrado!`,\n    transaction_due: `💰 *Lembrete de Pagamento*\\n\\nOlá ${user.name}!\\n\\n💸 **${data.title}**\\n💵 Valor: R$ ${Number(data.amount).toFixed(2)}\\n📅 Vencimento: ${new Date(data.date).toLocaleDateString('pt-BR')}\\n\\n⏰ Não esqueça!`,\n    goal_progress: `🎯 *Progresso da Meta*\\n\\nOlá ${user.name}!\\n\\n🏆 **${data.title}**\\n💰 Atual: R$ ${Number(data.amount).toFixed(2)}\\n📊 Progresso: ${data.metadata?.progress_percent || 0}%`,\n    budget_exceeded: `⚠️ *Orçamento Excedido*\\n\\nOlá ${user.name}!\\n\\n📊 **${data.title}**\\n💸 Excesso: R$ ${Number(data.amount).toFixed(2)}`\n  };\n  return messages[event] || `📱 PoupeJá\\n\\nOlá ${user.name}!\\n\\n${data.title}`;\n}\n\nconst { event, user, data, automationRules = {} } = inputData;\n\nconst processedData = {\n  event,\n  user: { ...user, phone: normalizePhone(user.phone) },\n  data,\n  automationRules,\n  message: buildMessage(event, data, user),\n  shouldSendWhatsApp: automationRules.sendWhatsApp !== false && user.phone\n};\n\nreturn [processedData];"
       },
       "id": "process-data",
       "name": "⚙️ Processar Dados",
@@ -54,9 +57,7 @@
     },
     {
       "parameters": {
-        "url": "={{ $json.evolutionApi.apiUrl }}/message/sendText/{{ $json.evolutionApi.instance }}",
-        "authentication": "genericCredentialType",
-        "genericAuthType": "httpHeaderAuth",
+        "url": "https://EVOLUTION_API_URL/message/sendText/INSTANCIA",
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
@@ -67,4 +68,150 @@
             {
               "name": "apikey",
               "value": "COLE_SUA_API_KEY_AQUI"
-            }\n          ]\n        },\n        \"sendBody\": true,\n        \"bodyParameters\": {\n          \"parameters\": [\n            {\n              \"name\": \"number\",\n              \"value\": \"={{ $json.user.phone }}\"\n            },\n            {\n              \"name\": \"text\",\n              \"value\": \"={{ $json.message }}\"\n            }\n          ]\n        },\n        \"options\": {\n          \"timeout\": 10000\n        }\n      },\n      \"id\": \"send-whatsapp\",\n      \"name\": \"📨 Enviar WhatsApp\",\n      \"type\": \"n8n-nodes-base.httpRequest\",\n      \"typeVersion\": 4.2,\n      \"position\": [900, 180]\n    },\n    {\n      \"parameters\": {\n        \"authentication\": \"serviceAccount\",\n        \"operation\": \"insert\",\n        \"tableId\": \"poupeja_automation_logs\",\n        \"columnToMatchOn\": \"id\",\n        \"valuesToSend\": {\n          \"values\": [\n            {\n              \"column\": \"user_id\",\n              \"value\": \"={{ $json.user.id }}\"\n            },\n            {\n              \"column\": \"event_type\",\n              \"value\": \"={{ $json.event }}\"\n            },\n            {\n              \"column\": \"data\",\n              \"value\": \"={{ JSON.stringify($json.data) }}\"\n            },\n            {\n              \"column\": \"status\",\n              \"value\": \"sent\"\n            },\n            {\n              \"column\": \"created_at\",\n              \"value\": \"={{ $json.timestamp }}\"\n            }\n          ]\n        }\n      },\n      \"id\": \"log-supabase\",\n      \"name\": \"📊 Log no Supabase\",\n      \"type\": \"n8n-nodes-base.supabase\",\n      \"typeVersion\": 1,\n      \"position\": [900, 420]\n    },\n    {\n      \"parameters\": {\n        \"respondWith\": \"json\",\n        \"responseBody\": \"={ \\\"success\\\": true, \\\"message\\\": \\\"Automação executada com sucesso\\\", \\\"event\\\": \\\"{{ $json.event }}\\\", \\\"user\\\": \\\"{{ $json.user.name }}\\\", \\\"whatsapp_sent\\\": {{ $json.shouldSendWhatsApp }}, \\\"timestamp\\\": \\\"{{ $json.timestamp }}\\\" }\",\n        \"options\": {}\n      },\n      \"id\": \"success-response\",\n      \"name\": \"✅ Resposta Sucesso\",\n      \"type\": \"n8n-nodes-base.respondToWebhook\",\n      \"typeVersion\": 1,\n      \"position\": [1120, 300]\n    },\n    {\n      \"parameters\": {\n        \"respondWith\": \"json\",\n        \"responseBody\": \"={ \\\"success\\\": false, \\\"message\\\": \\\"WhatsApp não enviado\\\", \\\"reason\\\": \\\"Condições não atendidas\\\", \\\"event\\\": \\\"{{ $json.event }}\\\", \\\"user\\\": \\\"{{ $json.user.name }}\\\", \\\"timestamp\\\": \\\"{{ $json.timestamp }}\\\" }\",\n        \"options\": {},\n        \"httpCode\": 200\n      },\n      \"id\": \"skip-response\",\n      \"name\": \"⏭️ WhatsApp Ignorado\",\n      \"type\": \"n8n-nodes-base.respondToWebhook\",\n      \"typeVersion\": 1,\n      \"position\": [900, 580]\n    },\n    {\n      \"parameters\": {\n        \"respondWith\": \"json\",\n        \"responseBody\": \"={ \\\"success\\\": false, \\\"message\\\": \\\"Erro na automação\\\", \\\"error\\\": \\\"{{ $json.error.message }}\\\", \\\"timestamp\\\": \\\"{{ new Date().toISOString() }}\\\" }\",\n        \"options\": {},\n        \"httpCode\": 500\n      },\n      \"id\": \"error-response\",\n      \"name\": \"❌ Resposta Erro\",\n      \"type\": \"n8n-nodes-base.respondToWebhook\",\n      \"typeVersion\": 1,\n      \"position\": [680, 580]\n    }\n  ],\n  \"connections\": {\n    \"📥 Webhook PoupeJá\": {\n      \"main\": [\n        [\n          {\n            \"node\": \"⚙️ Processar Dados\",\n            \"type\": \"main\",\n            \"index\": 0\n          }\n        ]\n      ]\n    },\n    \"⚙️ Processar Dados\": {\n      \"main\": [\n        [\n          {\n            \"node\": \"📱 Enviar WhatsApp?\",\n            \"type\": \"main\",\n            \"index\": 0\n          }\n        ]\n      ]\n    },\n    \"📱 Enviar WhatsApp?\": {\n      \"main\": [\n        [\n          {\n            \"node\": \"📨 Enviar WhatsApp\",\n            \"type\": \"main\",\n            \"index\": 0\n          }\n        ],\n        [\n          {\n            \"node\": \"⏭️ WhatsApp Ignorado\",\n            \"type\": \"main\",\n            \"index\": 0\n          }\n        ]\n      ]\n    },\n    \"📨 Enviar WhatsApp\": {\n      \"main\": [\n        [\n          {\n            \"node\": \"📊 Log no Supabase\",\n            \"type\": \"main\",\n            \"index\": 0\n          }\n        ]\n      ]\n    },\n    \"📊 Log no Supabase\": {\n      \"main\": [\n        [\n          {\n            \"node\": \"✅ Resposta Sucesso\",\n            \"type\": \"main\",\n            \"index\": 0\n          }\n        ]\n      ]\n    }\n  },\n  \"pinData\": {},\n  \"settings\": {\n    \"executionOrder\": \"v1\"\n  },\n  \"staticData\": null,\n  \"tags\": [\n    {\n      \"createdAt\": \"2024-01-01T00:00:00.000Z\",\n      \"updatedAt\": \"2024-01-01T00:00:00.000Z\",\n      \"id\": \"poupeja-integration\",\n      \"name\": \"PoupeJá Integration\"\n    }\n  ],\n  \"triggerCount\": 1,\n  \"updatedAt\": \"2024-01-01T00:00:00.000Z\",\n  \"versionId\": \"complete-integration-v1\"\n}
+            }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "json",
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "number",
+              "value": "={{ $json.user.phone }}"
+            },
+            {
+              "name": "text",
+              "value": "={{ $json.message }}"
+            }
+          ]
+        }
+      },
+      "id": "send-whatsapp",
+      "name": "📨 Enviar WhatsApp",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [900, 180]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Log simples no console\nconsole.log('WhatsApp enviado para:', $json.user.name);\nconsole.log('Evento:', $json.event);\nconsole.log('Telefone:', $json.user.phone);\n\nreturn [$json];"
+      },
+      "id": "log-success",
+      "name": "📊 Log Sucesso",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [900, 420]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={ \"success\": true, \"message\": \"Automação executada\", \"event\": \"{{ $json.event }}\", \"user\": \"{{ $json.user.name }}\" }",
+        "options": {}
+      },
+      "id": "success-response",
+      "name": "✅ Resposta Sucesso",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [1120, 300]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={ \"success\": false, \"message\": \"WhatsApp ignorado\", \"event\": \"{{ $json.event }}\" }",
+        "options": {},
+        "httpCode": 200
+      },
+      "id": "skip-response",
+      "name": "⏭️ WhatsApp Ignorado",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [900, 580]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={ \"success\": false, \"message\": \"Erro na automação\" }",
+        "options": {},
+        "httpCode": 500
+      },
+      "id": "error-response",
+      "name": "❌ Resposta Erro",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [680, 580]
+    }
+  ],
+  "connections": {
+    "📥 Webhook PoupeJá": {
+      "main": [
+        [
+          {
+            "node": "⚙️ Processar Dados",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "⚙️ Processar Dados": {
+      "main": [
+        [
+          {
+            "node": "📱 Enviar WhatsApp?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "📱 Enviar WhatsApp?": {
+      "main": [
+        [
+          {
+            "node": "📨 Enviar WhatsApp",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "⏭️ WhatsApp Ignorado",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "📨 Enviar WhatsApp": {
+      "main": [
+        [
+          {
+            "node": "📊 Log Sucesso",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "📊 Log Sucesso": {
+      "main": [
+        [
+          {
+            "node": "✅ Resposta Sucesso",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {},
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "tags": [],
+  "triggerCount": 1,
+  "updatedAt": "2024-01-01T00:00:00.000Z",
+  "versionId": 1
+}
