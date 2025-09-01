@@ -109,10 +109,15 @@ export const AppointmentsPage: React.FC = () => {
               <h1 className="text-3xl font-bold text-foreground">Compromissos</h1>
               <p className="text-muted-foreground">Gerencie sua agenda pessoal</p>
             </div>
-            <Button onClick={() => setShowForm(true)} className="flex items-center gap-2">
-              <Plus className="h-4 w-4" />
-              Novo Compromisso
-            </Button>
+            <div className="flex gap-2">
+              <Button onClick={() => setShowForm(true)} className="flex items-center gap-2">
+                <Plus className="h-4 w-4" />
+                Novo Compromisso
+              </Button>
+              <Button onClick={() => window.open('/test-n8n', '_blank')} variant="outline" className="flex items-center gap-2">
+                🔧 Testar N8N
+              </Button>
+            </div>
           </div>
 
           {/* Filters */}

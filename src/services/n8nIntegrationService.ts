@@ -46,11 +46,20 @@ class N8NIntegrationService {
     if (this.isInitialized) return;
 
     try {
-      const { data: settings } = await supabase
+      console.log('=== N8N DEBUG: Initializing n8n service ===');
+      
+      const { data: settings, error } = await supabase
         .from('poupeja_settings')
         .select('key, value')
         .eq('category', 'integrations')
         .in('key', ['n8n_webhook_url', 'n8n_enabled', 'n8n_api_key', 'n8n_instance_name']);
+
+      console.log('=== N8N DEBUG: Settings query result:', { settings, error });
+
+      if (error) {
+        console.error('=== N8N DEBUG: Error fetching settings:', error);
+        throw error;
+      }
 
       if (settings) {
         this.config = settings.reduce((acc, setting) => {
@@ -59,17 +68,26 @@ class N8NIntegrationService {
         }, {} as Record<string, string>);
       }
 
+      console.log('=== N8N DEBUG: Final config:', this.config);
       this.isInitialized = true;
     } catch (error) {
-      console.error('Failed to initialize N8N integration:', error);
+      console.error('=== N8N DEBUG: Failed to initialize N8N integration:', error);
+      throw error;
     }
   }
 
   async triggerAutomation(data: N8NTriggerData): Promise<boolean> {
+    console.log('=== N8N DEBUG: triggerAutomation called with data:', data);
+    
     await this.initialize();
+    console.log('=== N8N DEBUG: Initialized, config:', this.config);
 
     if (!this.isEnabled()) {
-      console.log('N8N integration is disabled');
+      console.log('=== N8N DEBUG: N8N integration is disabled');
+      console.log('=== N8N DEBUG: Config state:', {
+        n8n_enabled: this.config?.n8n_enabled,
+        n8n_webhook_url: this.config?.n8n_webhook_url ? 'SET' : 'NOT SET'
+      });
       return false;
     }
 
@@ -89,7 +107,8 @@ class N8NIntegrationService {
         }
       };
 
-      console.log('Triggering N8N automation:', payload);
+      console.log('=== N8N DEBUG: Triggering N8N automation with payload:', payload);
+      console.log('=== N8N DEBUG: Webhook URL:', this.config.n8n_webhook_url);
 
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 10000); // 10s timeout
@@ -108,15 +127,24 @@ class N8NIntegrationService {
 
       clearTimeout(timeoutId);
 
+      console.log('=== N8N DEBUG: Response status:', response.status);
+      console.log('=== N8N DEBUG: Response headers:', Object.fromEntries(response.headers));
+
       if (!response.ok) {
-        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        const errorText = await response.text().catch(() => 'No response text');
+        console.error('=== N8N DEBUG: Response error text:', errorText);
+        throw new Error(`HTTP ${response.status}: ${response.statusText} - ${errorText}`);
       }
 
-      console.log('N8N automation triggered successfully');
+      const responseData = await response.json().catch(() => ({ success: true }));
+      console.log('=== N8N DEBUG: N8N automation triggered successfully, response:', responseData);
       return true;
 
     } catch (error) {
-      console.error('Failed to trigger N8N automation:', error);
+      console.error('=== N8N DEBUG: Failed to trigger N8N automation:', error);
+      if (error.name === 'AbortError') {
+        console.error('=== N8N DEBUG: Request timed out after 10 seconds');
+      }
       return false;
     }
   }

@@ -14,6 +14,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 // Import pages
 import Index from "./pages/Index";
 import { AppointmentsPage } from "./pages/AppointmentsPage";
+import { TestN8NPage } from "./pages/TestN8NPage";
 import TransactionsPage from "./pages/TransactionsPage";
 import CategoriesPage from "./pages/CategoriesPage";
 import BudgetsPage from "./pages/BudgetsPage";
@@ -59,6 +60,7 @@ function App() {
                         <Route path="/reports" element={<ReportsPage />} />
                         <Route path="/schedule" element={<SchedulePage />} />
                          <Route path="/appointments" element={<AppointmentsPage />} />
+                         <Route path="/test-n8n" element={<TestN8NPage />} />
                          <Route path="/settings" element={<SettingsPage />} />
                          <Route path="/profile" element={<ProfilePage />} />
                          <Route path="/plans" element={<PlansPage />} />

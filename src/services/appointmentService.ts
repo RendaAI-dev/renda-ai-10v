@@ -97,10 +97,13 @@ export const appointmentService = {
 
       // Trigger N8N integration asynchronously (don't block appointment creation)
       try {
+        console.log('=== N8N DEBUG: Starting appointment creation automation ===');
         const currentUser = await getCurrentUser();
+        console.log('=== N8N DEBUG: Current user:', currentUser);
+        
         if (currentUser && currentUser.phone) {
-          console.log('Triggering N8N automation for appointment creation:', newAppointment.id);
-          await n8nIntegrationService.onAppointmentCreated({
+          console.log('=== N8N DEBUG: User has phone, triggering N8N automation for appointment:', newAppointment.id);
+          const n8nResult = await n8nIntegrationService.onAppointmentCreated({
             id: data.id,
             title: data.title,
             description: data.description,
@@ -110,13 +113,18 @@ export const appointmentService = {
             reminder_enabled: data.reminder_enabled,
             reminder_times: data.reminder_times
           }, currentUser);
-          console.log('N8N automation triggered successfully for appointment:', newAppointment.id);
+          console.log('=== N8N DEBUG: N8N automation result:', n8nResult);
         } else {
-          console.warn('N8N automation skipped - user not found or missing phone number');
+          console.warn('=== N8N DEBUG: N8N automation skipped - user not found or missing phone number');
+          console.warn('=== N8N DEBUG: User data:', { 
+            hasUser: !!currentUser, 
+            hasPhone: currentUser?.phone ? 'YES' : 'NO',
+            phone: currentUser?.phone 
+          });
         }
       } catch (n8nError) {
         // Log error but don't throw - N8N failures shouldn't break appointment creation
-        console.error('N8N automation failed for appointment creation:', n8nError);
+        console.error('=== N8N DEBUG: N8N automation failed for appointment creation:', n8nError);
       }
 
       return newAppointment;
