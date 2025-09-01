@@ -28,22 +28,29 @@ export const getCategories = async (): Promise<Category[]> => {
 
 export const getCategoriesByType = async (type: 'income' | 'expense'): Promise<Category[]> => {
   try {
+    console.log(`Fetching ${type} categories...`);
+    
     const { data, error } = await supabase
       .from("poupeja_categories")
       .select("*")
       .eq("type", type)
       .order("name");
 
-    if (error) throw error;
+    if (error) {
+      console.error(`Error fetching ${type} categories:`, error);
+      throw error;
+    }
 
-    return data.map((item) => ({
+    console.log(`Found ${data?.length || 0} ${type} categories:`, data);
+
+    return data?.map((item) => ({
       id: item.id,
       name: item.name,
       type: item.type as 'income' | 'expense',
       color: item.color,
       icon: item.icon || "circle",
       isDefault: item.is_default
-    }));
+    })) || [];
   } catch (error) {
     console.error(`Error fetching ${type} categories:`, error);
     return [];

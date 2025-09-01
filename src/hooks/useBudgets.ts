@@ -28,29 +28,50 @@ export const useBudgets = () => {
     try {
       setLoading(true);
       
-      // Fetch budgets with category information
+      // First fetch all budgets for the user
       const { data: budgetData, error: budgetError } = await supabase
-        .from('poupeja_budgets' as any)
-        .select(`
-          *,
-          poupeja_categories (
-            name,
-            icon,
-            color
-          )
-        `);
+        .from('poupeja_budgets')
+        .select('*')
+        .order('created_at', { ascending: false });
 
       if (budgetError) {
         console.error('Error fetching budgets:', budgetError);
+        toast({
+          title: 'Erro',
+          description: 'Falha ao carregar orçamentos: ' + budgetError.message,
+          variant: 'destructive',
+        });
         return;
       }
 
-      if (!budgetData) return;
+      if (!budgetData || budgetData.length === 0) {
+        setBudgets([]);
+        return;
+      }
+
+      // Fetch all categories to get category info
+      const { data: categoriesData, error: categoriesError } = await supabase
+        .from('poupeja_categories')
+        .select('*');
+
+      if (categoriesError) {
+        console.error('Error fetching categories:', categoriesError);
+      }
+
+      // Create a map of categories for quick lookup
+      const categoriesMap = new Map();
+      categoriesData?.forEach(category => {
+        categoriesMap.set(category.id, category);
+      });
 
       // Calculate spent amounts for each budget
       const budgetsWithSpent = await Promise.all(
         budgetData.map(async (budget: any) => {
-          const { data: transactionData } = await supabase
+          // Get category info
+          const category = categoriesMap.get(budget.category_id);
+          
+          // Calculate spent amount for this budget period
+          const { data: transactionData, error: transactionError } = await supabase
             .from('poupeja_transactions')
             .select('amount')
             .eq('category_id', budget.category_id)
@@ -58,14 +79,18 @@ export const useBudgets = () => {
             .gte('date', budget.start_date)
             .lte('date', budget.end_date);
 
-          const spent = transactionData?.reduce((sum, transaction) => sum + transaction.amount, 0) || 0;
+          if (transactionError) {
+            console.error('Error fetching transactions for budget:', transactionError);
+          }
+
+          const spent = transactionData?.reduce((sum, transaction) => sum + Math.abs(transaction.amount), 0) || 0;
           const percentage = budget.amount > 0 ? (spent / budget.amount) * 100 : 0;
 
           return {
             ...budget,
-            category_name: budget.poupeja_categories?.name,
-            category_icon: budget.poupeja_categories?.icon,
-            category_color: budget.poupeja_categories?.color,
+            category_name: category?.name || 'Categoria não encontrada',
+            category_icon: category?.icon || 'circle',
+            category_color: category?.color || '#9E9E9E',
             spent,
             percentage: Math.min(percentage, 100)
           };
