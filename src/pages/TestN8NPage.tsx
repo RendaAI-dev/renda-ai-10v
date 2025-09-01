@@ -70,6 +70,9 @@ export const TestN8NPage: React.FC = () => {
     try {
       console.log('=== N8N TEST: Starting connection test ===');
       
+      // Reset the N8N service to reload configurations
+      n8nIntegrationService.reset();
+      
       // Get current user first (reload to ensure fresh data)
       const user = await getCurrentUser();
       console.log('=== N8N TEST: Current user:', user);

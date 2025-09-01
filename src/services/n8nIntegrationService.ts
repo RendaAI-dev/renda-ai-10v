@@ -42,6 +42,13 @@ class N8NIntegrationService {
     return N8NIntegrationService.instance;
   }
 
+  // Method to reset the service (for debugging)
+  reset() {
+    console.log('=== N8N DEBUG: Resetting N8N service ===');
+    this.config = null;
+    this.isInitialized = false;
+  }
+
   async initialize() {
     if (this.isInitialized) return;
 
