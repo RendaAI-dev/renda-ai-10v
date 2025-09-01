@@ -32,8 +32,8 @@ export const useReminders = (
 
     // Schedule reminders for appointments
     appointments.forEach(appointment => {
-      if (appointment.reminderEnabled && !appointment.reminderSent && appointment.reminderTimes) {
-        appointment.reminderTimes.forEach(reminderTime => {
+      if (appointment.reminder_enabled && !appointment.reminder_sent && appointment.reminder_times) {
+        appointment.reminder_times.forEach(reminderTime => {
           scheduleAppointmentReminder(appointment, reminderTime);
         });
       }
@@ -72,7 +72,7 @@ export const useReminders = (
   };
 
   const scheduleAppointmentReminder = (appointment: Appointment, reminderTime: number) => {
-    const appointmentDate = new Date(appointment.appointmentDate);
+    const appointmentDate = new Date(appointment.appointment_date);
     const reminderDate = new Date(appointmentDate.getTime() - reminderTime * 60 * 1000);
     const now = new Date();
     const timeUntilReminder = reminderDate.getTime() - now.getTime();
