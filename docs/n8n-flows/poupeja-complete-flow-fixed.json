@@ -1,0 +1,305 @@
+{
+  "meta": {
+    "instanceId": "poupeja-production"
+  },
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "poupeja-webhook",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "8c0f8c8a-8c8a-4c8a-8c8a-8c8a8c8a8c8a",
+      "name": "🎯 PoupeJá Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [240, 300],
+      "webhookId": "poupeja-webhook-trigger"
+    },
+    {
+      "parameters": {
+        "jsCode": "// ===== PROCESSADOR DE DADOS POUPEJÁ - N8N =====\n// Versão: 2.0 - Completa e Otimizada\n\nconsole.log('=== INÍCIO DO PROCESSAMENTO POUPEJÁ ===');\n\n// Função para logs detalhados\nfunction logDetalhado(nivel, titulo, dados = null) {\n  const timestamp = new Date().toISOString();\n  const logMsg = `[${timestamp}] [${nivel}] ${titulo}`;\n  console.log(logMsg);\n  if (dados) {\n    console.log('Dados:', JSON.stringify(dados, null, 2));\n  }\n}\n\ntry {\n  // === EXTRAÇÃO DOS DADOS DO WEBHOOK ===\n  logDetalhado('INFO', '1. Extraindo dados do webhook');\n  \n  let dadosEntrada;\n  \n  // Tentar diferentes fontes de dados\n  if ($input && $input.first() && $input.first().json) {\n    dadosEntrada = $input.first().json;\n    logDetalhado('INFO', 'Dados obtidos via $input.first().json');\n  } else if ($json) {\n    dadosEntrada = $json;\n    logDetalhado('INFO', 'Dados obtidos via $json');\n  } else {\n    throw new Error('Nenhum dado encontrado no webhook');\n  }\n  \n  logDetalhado('DEBUG', 'Dados brutos recebidos', dadosEntrada);\n  \n  // === VALIDAÇÃO BÁSICA DOS DADOS ===\n  logDetalhado('INFO', '2. Validando estrutura dos dados');\n  \n  if (!dadosEntrada || typeof dadosEntrada !== 'object') {\n    throw new Error('Dados inválidos ou ausentes');\n  }\n  \n  // Extrair campos principais\n  const {\n    type = 'custom',\n    user = {},\n    data = {},\n    message = '',\n    metadata = {},\n    evolution_config = {}\n  } = dadosEntrada;\n  \n  logDetalhado('INFO', 'Campos extraídos', { type, user: user.phone, message: message.substring(0, 50) });\n  \n  // === VALIDAÇÃO DO USUÁRIO ===\n  logDetalhado('INFO', '3. Validando dados do usuário');\n  \n  if (!user.phone) {\n    throw new Error('Telefone do usuário não fornecido');\n  }\n  \n  // === NORMALIZAÇÃO DO TELEFONE BRASILEIRO ===\n  logDetalhado('INFO', '4. Normalizando telefone brasileiro');\n  \n  function normalizarTelefoneBrasil(telefone) {\n    if (!telefone) return null;\n    \n    // Remove todos os caracteres não numéricos\n    let telefoneNumeros = telefone.replace(/[^0-9]/g, '');\n    \n    logDetalhado('DEBUG', 'Telefone após limpeza', telefoneNumeros);\n    \n    // Remove código do país (55) se presente no início\n    if (telefoneNumeros.startsWith('55') && telefoneNumeros.length >= 12) {\n      telefoneNumeros = telefoneNumeros.substring(2);\n      logDetalhado('DEBUG', 'Removido código do país 55', telefoneNumeros);\n    }\n    \n    // Verifica se tem DDD (2 dígitos) + número\n    if (telefoneNumeros.length === 10) {\n      // DDD + 8 dígitos (celular sem 9º dígito) - adicionar 9\n      const ddd = telefoneNumeros.substring(0, 2);\n      const numero = telefoneNumeros.substring(2);\n      telefoneNumeros = ddd + '9' + numero;\n      logDetalhado('DEBUG', 'Adicionado 9º dígito', telefoneNumeros);\n    }\n    \n    // Adiciona código do país\n    if (telefoneNumeros.length === 11) {\n      telefoneNumeros = '55' + telefoneNumeros;\n      logDetalhado('DEBUG', 'Adicionado código do país', telefoneNumeros);\n    }\n    \n    // Validação final\n    if (telefoneNumeros.length !== 13) {\n      logDetalhado('WARN', 'Telefone com formato inválido', { original: telefone, processado: telefoneNumeros });\n      return null;\n    }\n    \n    return telefoneNumeros;\n  }\n  \n  const telefoneNormalizado = normalizarTelefoneBrasil(user.phone);\n  \n  if (!telefoneNormalizado) {\n    throw new Error(`Telefone inválido: ${user.phone}`);\n  }\n  \n  logDetalhado('INFO', 'Telefone normalizado com sucesso', { original: user.phone, normalizado: telefoneNormalizado });\n  \n  // === CONFIGURAÇÃO DA EVOLUTION API ===\n  logDetalhado('INFO', '5. Configurando Evolution API');\n  \n  const evolutionConfig = {\n    apiUrl: evolution_config.api_url || metadata.evolution_api_url || 'http://localhost:8080',\n    apiKey: evolution_config.api_key || metadata.evolution_api_key || '',\n    instance: evolution_config.instance || metadata.evolution_instance || 'poupeja'\n  };\n  \n  logDetalhado('INFO', 'Configuração Evolution API', {\n    apiUrl: evolutionConfig.apiUrl,\n    instance: evolutionConfig.instance,\n    apiKeyPresente: !!evolutionConfig.apiKey\n  });\n  \n  // === CONSTRUÇÃO DA MENSAGEM PERSONALIZADA ===\n  logDetalhado('INFO', '6. Construindo mensagem personalizada');\n  \n  function construirMensagem(tipo, usuario, dados, mensagemCustom) {\n    const nome = usuario.name || 'Usuário';\n    const emoji = {\n      'appointment_created': '📅',\n      'appointment_reminder': '⏰',\n      'transaction_due': '💰',\n      'transaction_reminder': '💳',\n      'goal_progress': '🎯',\n      'goal_achieved': '🏆',\n      'budget_exceeded': '⚠️',\n      'custom': '📢'\n    };\n    \n    const emojiTipo = emoji[tipo] || '📢';\n    \n    switch (tipo) {\n      case 'appointment_created':\n      case 'appointment_reminder':\n        return `${emojiTipo} *Lembrete de Compromisso*\\n\\n` +\n               `Olá ${nome}! 👋\\n\\n` +\n               `📝 *${dados.title || 'Compromisso'}*\\n` +\n               `📅 *Data:* ${dados.date ? new Date(dados.date).toLocaleDateString('pt-BR') : 'A definir'}\\n` +\n               `🕒 *Horário:* ${dados.time || 'A definir'}\\n\\n` +\n               `${dados.description ? `📋 *Detalhes:* ${dados.description}\\n\\n` : ''}` +\n               `Não se esqueça! 😊\\n\\n` +\n               `_Enviado pelo PoupeJá_`;\n      \n      case 'transaction_due':\n      case 'transaction_reminder':\n        return `${emojiTipo} *Lembrete Financeiro*\\n\\n` +\n               `Olá ${nome}! 👋\\n\\n` +\n               `💰 *${dados.title || 'Transação'}*\\n` +\n               `💵 *Valor:* R$ ${dados.amount ? Number(dados.amount).toLocaleString('pt-BR', {minimumFractionDigits: 2}) : '0,00'}\\n` +\n               `📅 *Vencimento:* ${dados.date ? new Date(dados.date).toLocaleDateString('pt-BR') : 'Hoje'}\\n` +\n               `🏷️ *Categoria:* ${dados.category || 'Geral'}\\n\\n` +\n               `${dados.description ? `📋 *Descrição:* ${dados.description}\\n\\n` : ''}` +\n               `Não deixe para depois! 💪\\n\\n` +\n               `_Enviado pelo PoupeJá_`;\n      \n      case 'goal_progress':\n        const progresso = dados.progress || 0;\n        return `${emojiTipo} *Progresso da Meta*\\n\\n` +\n               `Olá ${nome}! 👋\\n\\n` +\n               `🎯 *${dados.title || 'Meta'}*\\n` +\n               `📊 *Progresso:* ${progresso}%\\n` +\n               `💰 *Valor atual:* R$ ${dados.current_amount ? Number(dados.current_amount).toLocaleString('pt-BR', {minimumFractionDigits: 2}) : '0,00'}\\n` +\n               `🎯 *Meta:* R$ ${dados.target_amount ? Number(dados.target_amount).toLocaleString('pt-BR', {minimumFractionDigits: 2}) : '0,00'}\\n\\n` +\n               `Continue assim! Você está no caminho certo! 🚀\\n\\n` +\n               `_Enviado pelo PoupeJá_`;\n      \n      case 'goal_achieved':\n        return `${emojiTipo} *Meta Alcançada!*\\n\\n` +\n               `Parabéns ${nome}! 🎉\\n\\n` +\n               `🏆 *${dados.title || 'Meta'}*\\n` +\n               `💰 *Valor alcançado:* R$ ${dados.achieved_amount ? Number(dados.achieved_amount).toLocaleString('pt-BR', {minimumFractionDigits: 2}) : '0,00'}\\n\\n` +\n               `Você conseguiu! Isso é incrível! 🌟\\n\\n` +\n               `Continue definindo novas metas e crescendo! 📈\\n\\n` +\n               `_Enviado pelo PoupeJá_`;\n      \n      case 'budget_exceeded':\n        const percentualExcesso = dados.exceeded_percent || 0;\n        return `${emojiTipo} *Orçamento Excedido*\\n\\n` +\n               `Atenção ${nome}! ⚠️\\n\\n` +\n               `📊 *Orçamento:* ${dados.budget_name || 'Geral'}\\n` +\n               `💸 *Excesso:* ${percentualExcesso}% acima do planejado\\n` +\n               `💰 *Valor excedido:* R$ ${dados.exceeded_amount ? Number(dados.exceeded_amount).toLocaleString('pt-BR', {minimumFractionDigits: 2}) : '0,00'}\\n\\n` +\n               `Que tal revisar seus gastos? 🤔\\n\\n` +\n               `_Enviado pelo PoupeJá_`;\n      \n      default:\n        return mensagemCustom || `${emojiTipo} *Notificação PoupeJá*\\n\\n` +\n               `Olá ${nome}! 👋\\n\\n` +\n               `${dados.title || 'Nova notificação'}\\n\\n` +\n               `${dados.description || 'Você tem uma nova notificação do PoupeJá.'}\\n\\n` +\n               `_Enviado pelo PoupeJá_`;\n    }\n  }\n  \n  const mensagemFinal = construirMensagem(type, user, data, message);\n  \n  logDetalhado('INFO', 'Mensagem construída', { tipo: type, tamanho: mensagemFinal.length });\n  \n  // === PREPARAÇÃO DOS DADOS DE SAÍDA ===\n  logDetalhado('INFO', '7. Preparando dados de saída');\n  \n  const dadosSaida = {\n    // Dados processados\n    processamento: {\n      sucesso: true,\n      timestamp: new Date().toISOString(),\n      tipo_evento: type,\n      telefone_original: user.phone,\n      telefone_normalizado: telefoneNormalizado,\n      deve_enviar: true\n    },\n    \n    // Dados do usuário processados\n    usuario: {\n      id: user.id,\n      nome: user.name || 'Usuário',\n      email: user.email,\n      telefone: telefoneNormalizado\n    },\n    \n    // Dados do evento\n    evento: {\n      tipo: type,\n      dados: data,\n      mensagem_personalizada: mensagemFinal\n    },\n    \n    // Configuração Evolution API\n    evolution_api: {\n      url: evolutionConfig.apiUrl,\n      api_key: evolutionConfig.apiKey,\n      instance: evolutionConfig.instance,\n      endpoint_envio: `${evolutionConfig.apiUrl}/message/sendText/${evolutionConfig.instance}`\n    },\n    \n    // Payload para Evolution API\n    whatsapp_payload: {\n      number: telefoneNormalizado,\n      text: mensagemFinal\n    },\n    \n    // Metadados\n    metadata: {\n      ...metadata,\n      processado_em: new Date().toISOString(),\n      versao_processador: '2.0',\n      origem: 'poupeja-n8n-flow'\n    }\n  };\n  \n  logDetalhado('INFO', 'Dados de saída preparados', {\n    usuario_id: dadosSaida.usuario.id,\n    telefone: dadosSaida.usuario.telefone,\n    tipo_evento: dadosSaida.evento.tipo,\n    endpoint: dadosSaida.evolution_api.endpoint_envio\n  });\n  \n  console.log('=== PROCESSAMENTO CONCLUÍDO COM SUCESSO ===');\n  \n  return dadosSaida;\n  \n} catch (erro) {\n  logDetalhado('ERROR', 'Erro durante processamento', {\n    mensagem: erro.message,\n    stack: erro.stack\n  });\n  \n  // Retornar objeto de erro estruturado\n  return {\n    processamento: {\n      sucesso: false,\n      timestamp: new Date().toISOString(),\n      erro: {\n        mensagem: erro.message,\n        tipo: erro.name || 'ProcessingError',\n        detalhes: erro.stack\n      },\n      deve_enviar: false\n    },\n    erro_detalhes: {\n      dados_recebidos: $json || $input?.first()?.json || null,\n      contexto: 'processador_dados_poupeja'\n    }\n  };\n}"
+      },
+      "id": "9d1f9d9a-9d9a-4d9a-9d9a-9d9a9d9a9d9a",
+      "name": "⚙️ Processar Dados",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [460, 300]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "condition1",
+              "leftValue": "={{ $json.processamento.sucesso }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "equal"
+              }
+            },
+            {
+              "id": "condition2",
+              "leftValue": "={{ $json.processamento.deve_enviar }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "equal"
+              }
+            },
+            {
+              "id": "condition3",
+              "leftValue": "={{ $json.usuario.telefone }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "ae2fae2f-ae2f-4e2f-ae2f-ae2fae2fae2f",
+      "name": "✅ Dados Válidos?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [680, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "// === CONFIGURADOR EVOLUTION API ===\n// Prepara configurações finais para envio\n\nconsole.log('=== CONFIGURANDO EVOLUTION API ===');\n\ntry {\n  const dados = $json;\n  \n  console.log('Dados recebidos para configuração:', JSON.stringify({\n    url: dados.evolution_api.url,\n    instance: dados.evolution_api.instance,\n    hasApiKey: !!dados.evolution_api.api_key,\n    telefone: dados.usuario.telefone\n  }, null, 2));\n  \n  // Validar configurações obrigatórias\n  if (!dados.evolution_api.url) {\n    throw new Error('URL da Evolution API não configurada');\n  }\n  \n  if (!dados.evolution_api.instance) {\n    throw new Error('Instância da Evolution API não configurada');\n  }\n  \n  // Construir headers\n  const headers = {\n    'Content-Type': 'application/json',\n    'Accept': 'application/json'\n  };\n  \n  // Adicionar API Key se disponível\n  if (dados.evolution_api.api_key) {\n    headers['apikey'] = dados.evolution_api.api_key;\n    console.log('API Key adicionada aos headers');\n  }\n  \n  // Preparar configuração final\n  const configuracao = {\n    ...dados,\n    evolution_final: {\n      url_completa: dados.evolution_api.endpoint_envio,\n      headers: headers,\n      payload: dados.whatsapp_payload,\n      timeout: 30000, // 30 segundos\n      retry_attempts: 2\n    }\n  };\n  \n  console.log('Configuração Evolution API finalizada:', JSON.stringify({\n    url: configuracao.evolution_final.url_completa,\n    headers: Object.keys(configuracao.evolution_final.headers),\n    payload: configuracao.evolution_final.payload\n  }, null, 2));\n  \n  return configuracao;\n  \n} catch (erro) {\n  console.error('Erro na configuração Evolution API:', erro.message);\n  \n  return {\n    ...$json,\n    processamento: {\n      ...$json.processamento,\n      sucesso: false,\n      erro: {\n        mensagem: erro.message,\n        tipo: 'EvolutionConfigError',\n        contexto: 'configurador_evolution_api'\n      },\n      deve_enviar: false\n    }\n  };\n}"
+      },
+      "id": "bf3fbf3f-bf3f-4f3f-bf3f-bf3fbf3fbf3f",
+      "name": "🔧 Configurar Evolution API",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [900, 200]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $json.evolution_final.url_completa }}",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "Accept", 
+              "value": "application/json"
+            },
+            {
+              "name": "apikey",
+              "value": "={{ $json.evolution_api.api_key }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": []
+        },
+        "jsonBody": "={{ JSON.stringify($json.evolution_final.payload) }}",
+        "options": {
+          "timeout": 30000,
+          "retry": {
+            "enabled": true,
+            "maxAttempts": 2
+          }
+        }
+      },
+      "id": "c04fc04f-c04f-4c04-c04f-c04fc04fc04f",
+      "name": "📲 Enviar WhatsApp",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [1120, 200]
+    },
+    {
+      "parameters": {
+        "jsCode": "// === LOGGER DE SUCESSO ===\n// Registra envios bem-sucedidos\n\nconst timestamp = new Date().toISOString();\nconst dados = $('Processar Dados').first().json;\nconst resposta = $json;\n\nconsole.log('=== WHATSAPP ENVIADO COM SUCESSO ===');\nconsole.log('Timestamp:', timestamp);\nconsole.log('Usuário:', dados.usuario.nome, '-', dados.usuario.telefone);\nconsole.log('Tipo evento:', dados.evento.tipo);\nconsole.log('Status Evolution API:', resposta.status || 'N/A');\nconsole.log('Response Evolution API:', JSON.stringify(resposta, null, 2));\n\n// Preparar dados para log estruturado\nconst logData = {\n  timestamp,\n  status: 'success',\n  evento: {\n    tipo: dados.evento.tipo,\n    usuario_id: dados.usuario.id,\n    usuario_nome: dados.usuario.nome,\n    usuario_telefone: dados.usuario.telefone\n  },\n  envio: {\n    evolution_status: resposta.status,\n    evolution_response: resposta,\n    mensagem_tamanho: dados.evento.mensagem_personalizada.length,\n    endpoint_usado: dados.evolution_api.endpoint_envio\n  },\n  performance: {\n    processamento_iniciado: dados.processamento.timestamp,\n    envio_concluido: timestamp,\n    duracao_total: new Date(timestamp) - new Date(dados.processamento.timestamp)\n  }\n};\n\nconsole.log('Log estruturado:', JSON.stringify(logData, null, 2));\n\nreturn {\n  success: true,\n  message: 'WhatsApp enviado com sucesso',\n  log_data: logData,\n  original_data: dados\n};"
+      },
+      "id": "d05fd05f-d05f-4d05-d05f-d05fd05fd05f",
+      "name": "📊 Log Sucesso",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1340, 200]
+    },
+    {
+      "parameters": {
+        "jsCode": "// === LOGGER DE ERRO DE PROCESSAMENTO ===\n// Registra erros durante processamento de dados\n\nconst timestamp = new Date().toISOString();\nconst dados = $json;\n\nconsole.log('=== ERRO NO PROCESSAMENTO DE DADOS ===');\nconsole.log('Timestamp:', timestamp);\nconsole.log('Erro:', dados.processamento.erro.mensagem);\nconsole.log('Tipo erro:', dados.processamento.erro.tipo);\nconsole.log('Dados recebidos:', JSON.stringify(dados.erro_detalhes.dados_recebidos, null, 2));\n\n// Preparar dados para log de erro\nconst logError = {\n  timestamp,\n  status: 'error',\n  error_type: 'processing_error',\n  error: {\n    message: dados.processamento.erro.mensagem,\n    type: dados.processamento.erro.tipo,\n    details: dados.processamento.erro.detalhes\n  },\n  context: {\n    dados_recebidos: dados.erro_detalhes.dados_recebidos,\n    contexto: dados.erro_detalhes.contexto\n  }\n};\n\nconsole.log('Log de erro estruturado:', JSON.stringify(logError, null, 2));\n\nreturn {\n  success: false,\n  error_type: 'processing_error',\n  message: 'Erro no processamento dos dados',\n  log_data: logError,\n  original_data: dados\n};"
+      },
+      "id": "e06fe06f-e06f-4e06-e06f-e06fe06fe06f",
+      "name": "📝 Log Erro Processamento",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [900, 400]
+    },
+    {
+      "parameters": {
+        "jsCode": "// === LOGGER DE ERRO DE ENVIO ===\n// Registra erros durante envio WhatsApp\n\nconst timestamp = new Date().toISOString();\nconst dadosOriginais = $('Processar Dados').first().json;\nconst erro = $json;\n\nconsole.log('=== ERRO NO ENVIO WHATSAPP ===');\nconsole.log('Timestamp:', timestamp);\nconsole.log('Usuário:', dadosOriginais.usuario.nome, '-', dadosOriginais.usuario.telefone);\nconsole.log('Erro HTTP:', erro.message || 'Erro desconhecido');\nconsole.log('Status code:', erro.httpCode || 'N/A');\nconsole.log('Response:', JSON.stringify(erro, null, 2));\n\n// Preparar dados para log de erro de envio\nconst logError = {\n  timestamp,\n  status: 'error',\n  error_type: 'sending_error',\n  evento: {\n    tipo: dadosOriginais.evento.tipo,\n    usuario_id: dadosOriginais.usuario.id,\n    usuario_nome: dadosOriginais.usuario.nome,\n    usuario_telefone: dadosOriginais.usuario.telefone\n  },\n  error: {\n    message: erro.message || 'Erro no envio WhatsApp',\n    http_code: erro.httpCode,\n    response: erro,\n    endpoint: dadosOriginais.evolution_api.endpoint_envio\n  },\n  performance: {\n    processamento_iniciado: dadosOriginais.processamento.timestamp,\n    erro_ocorrido: timestamp,\n    duracao_ate_erro: new Date(timestamp) - new Date(dadosOriginais.processamento.timestamp)\n  }\n};\n\nconsole.log('Log de erro de envio estruturado:', JSON.stringify(logError, null, 2));\n\nreturn {\n  success: false,\n  error_type: 'sending_error',\n  message: 'Erro no envio WhatsApp',\n  log_data: logError,\n  original_data: dadosOriginais\n};"
+      },
+      "id": "f07ff07f-f07f-4f07-f07f-f07ff07ff07f",
+      "name": "📝 Log Erro Envio",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1340, 400]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ JSON.stringify({\n  success: true,\n  message: 'WhatsApp enviado com sucesso',\n  timestamp: new Date().toISOString(),\n  data: {\n    usuario: $json.original_data.usuario.nome,\n    telefone: $json.original_data.usuario.telefone,\n    tipo_evento: $json.original_data.evento.tipo,\n    evolution_status: 'sent'\n  }\n}) }}",
+        "options": {}
+      },
+      "id": "10811081-1081-4108-1081-108110811081",
+      "name": "✅ Resposta Sucesso",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [1560, 200]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ JSON.stringify({\n  success: false,\n  error: 'Erro no processamento dos dados',\n  message: $json.log_data.error.message,\n  timestamp: new Date().toISOString(),\n  details: {\n    error_type: $json.error_type,\n    context: 'data_processing'\n  }\n}) }}",
+        "responseCode": 400,
+        "options": {}
+      },
+      "id": "11911191-1191-4119-1191-119111911191",
+      "name": "❌ Resposta Erro Processamento",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [1120, 400]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ JSON.stringify({\n  success: false,\n  error: 'Erro no envio WhatsApp',\n  message: $json.log_data.error.message,\n  timestamp: new Date().toISOString(),\n  details: {\n    error_type: $json.error_type,\n    http_code: $json.log_data.error.http_code,\n    context: 'whatsapp_sending'\n  }\n}) }}",
+        "responseCode": 500,
+        "options": {}
+      },
+      "id": "12a12a12-12a1-412a-12a1-12a12a12a12a",
+      "name": "❌ Resposta Erro Envio",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [1560, 400]
+    }
+  ],
+  "connections": {
+    "🎯 PoupeJá Webhook": {
+      "main": [
+        [
+          {
+            "node": "⚙️ Processar Dados",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "⚙️ Processar Dados": {
+      "main": [
+        [
+          {
+            "node": "✅ Dados Válidos?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "✅ Dados Válidos?": {
+      "main": [
+        [
+          {
+            "node": "🔧 Configurar Evolution API",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "📝 Log Erro Processamento",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "🔧 Configurar Evolution API": {
+      "main": [
+        [
+          {
+            "node": "📲 Enviar WhatsApp",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "📲 Enviar WhatsApp": {
+      "main": [
+        [
+          {
+            "node": "📊 Log Sucesso",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ],
+      "error": [
+        [
+          {
+            "node": "📝 Log Erro Envio",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "📊 Log Sucesso": {
+      "main": [
+        [
+          {
+            "node": "✅ Resposta Sucesso",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "📝 Log Erro Processamento": {
+      "main": [
+        [
+          {
+            "node": "❌ Resposta Erro Processamento",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "📝 Log Erro Envio": {
+      "main": [
+        [
+          {
+            "node": "❌ Resposta Erro Envio",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {}
+}
