@@ -72,7 +72,10 @@ serve(async (req) => {
       );
     }
 
-    console.log(`${activate ? 'Activating' : 'Deactivating'} instance:`, instance_name);
+    // Trim whitespace from instance name
+    const trimmedInstanceName = instance_name.trim();
+
+    console.log(`${activate ? 'Activating' : 'Deactivating'} instance:`, trimmedInstanceName);
 
     // Update instance status in database
     const { data: updatedConfig, error: updateError } = await supabaseClient
@@ -85,8 +88,8 @@ serve(async (req) => {
           qr_code: null, 
           phone_connected: null 
         })
-      })
-      .eq('instance_name', instance_name)
+        })
+      .eq('instance_name', trimmedInstanceName)
       .select()
       .maybeSingle();
 
@@ -108,7 +111,7 @@ serve(async (req) => {
       ? 'Instância ativada com sucesso! Agora você pode conectar o WhatsApp.'
       : 'Instância desativada com sucesso.';
 
-    console.log(`Instance ${instance_name} ${activate ? 'activated' : 'deactivated'} successfully`);
+    console.log(`Instance ${trimmedInstanceName} ${activate ? 'activated' : 'deactivated'} successfully`);
 
     return new Response(
       JSON.stringify({ 

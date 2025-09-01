@@ -71,13 +71,16 @@ serve(async (req) => {
       );
     }
 
-    console.log('Reconnecting instance:', instance_name);
+    // Trim whitespace from instance name
+    const trimmedInstanceName = instance_name.trim();
+
+    console.log('Reconnecting instance:', trimmedInstanceName);
 
     // Get Evolution API configuration
     const { data: config, error: configError } = await supabaseClient
       .from('poupeja_evolution_config')
       .select('*')
-      .eq('instance_name', instance_name)
+      .eq('instance_name', trimmedInstanceName)
       .maybeSingle();
 
     if (configError || !config) {
@@ -98,15 +101,15 @@ serve(async (req) => {
     }
 
     // Try to connect to Evolution API
-    const evolutionUrl = config.api_url.replace(/\/+$/, ''); // Remove trailing slashes
-    const apiKey = config.api_key;
+    const evolutionUrl = config.api_url.trim().replace(/\/+$/, ''); // Remove trailing slashes and spaces
+    const apiKey = config.api_key.trim();
 
     console.log('Connecting to Evolution API:', evolutionUrl);
     console.log('Using API key:', apiKey.substring(0, 8) + '...');
-    console.log('Instance name:', instance_name);
+    console.log('Instance name:', trimmedInstanceName);
 
     // First, try to get instance status
-    const statusResponse = await fetch(`${evolutionUrl}/instance/connectionState/${instance_name}`, {
+    const statusResponse = await fetch(`${evolutionUrl}/instance/connectionState/${trimmedInstanceName}`, {
       method: 'GET',
       headers: {
         'apikey': apiKey,
@@ -132,7 +135,7 @@ serve(async (req) => {
           last_connection_check: new Date().toISOString(),
           qr_code: null
         })
-        .eq('instance_name', instance_name);
+        .eq('instance_name', trimmedInstanceName);
 
       return new Response(
         JSON.stringify({ 
@@ -148,7 +151,7 @@ serve(async (req) => {
     }
 
     // If not connected, try to generate QR code
-    const connectResponse = await fetch(`${evolutionUrl}/instance/connect/${instance_name}`, {
+    const connectResponse = await fetch(`${evolutionUrl}/instance/connect/${trimmedInstanceName}`, {
       method: 'GET',
       headers: {
         'apikey': apiKey,
@@ -211,7 +214,7 @@ serve(async (req) => {
     await supabaseClient
       .from('poupeja_evolution_config')
       .update(updateData)
-      .eq('instance_name', instance_name);
+      .eq('instance_name', trimmedInstanceName);
 
   } catch (error) {
     console.error('Error in evolution-reconnect function:', error);
