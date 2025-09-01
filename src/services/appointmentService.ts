@@ -1,4 +1,5 @@
 import { supabase } from "@/integrations/supabase/client";
+import { formatInTimeZone } from "date-fns-tz";
 
 export interface Appointment {
   id: string;

@@ -11,6 +11,7 @@ import { useAppointments } from "@/hooks/useAppointments";
 import { AppointmentForm } from "@/components/appointments/AppointmentForm";
 import { Appointment } from "@/services/appointmentService";
 import { format } from "date-fns";
+import { formatInTimeZone } from "date-fns-tz";
 import { ptBR } from "date-fns/locale";
 
 const appointmentCategories = [
@@ -168,7 +169,7 @@ export const AppointmentsPage: React.FC = () => {
                         <div className="flex items-center gap-4 text-sm text-muted-foreground">
                           <span className="flex items-center gap-1">
                             <Clock className="h-3 w-3" />
-                            {format(new Date(appointment.appointmentDate), "dd 'de' MMMM 'às' HH:mm", { locale: ptBR })}
+                            {formatInTimeZone(new Date(appointment.appointmentDate), 'America/Sao_Paulo', "dd 'de' MMMM 'às' HH:mm", { locale: ptBR })}
                           </span>
                           {appointment.location && (
                             <span className="flex items-center gap-1">
@@ -231,7 +232,7 @@ export const AppointmentsPage: React.FC = () => {
                         <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
                           <span className="flex items-center gap-1">
                             <Clock className="h-3 w-3" />
-                            {format(new Date(appointment.appointmentDate), "dd/MM/yyyy 'às' HH:mm")}
+                            {formatInTimeZone(new Date(appointment.appointmentDate), 'America/Sao_Paulo', "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
                           </span>
                           {appointment.location && (
                             <span className="flex items-center gap-1">

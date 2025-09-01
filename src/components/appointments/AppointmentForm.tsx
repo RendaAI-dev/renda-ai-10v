@@ -11,6 +11,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Calendar, Clock, MapPin, Bell } from "lucide-react";
 import { Appointment } from "@/services/appointmentService";
 import { format } from "date-fns";
+import { formatInTimeZone, fromZonedTime } from "date-fns-tz";
 
 interface AppointmentFormProps {
   appointment?: Appointment;
@@ -52,7 +53,7 @@ export const AppointmentForm: React.FC<AppointmentFormProps> = ({
       title: appointment?.title || "",
       description: appointment?.description || "",
       appointmentDate: appointment?.appointmentDate 
-        ? format(new Date(appointment.appointmentDate), "yyyy-MM-dd'T'HH:mm")
+        ? formatInTimeZone(new Date(appointment.appointmentDate), 'America/Sao_Paulo', "yyyy-MM-dd'T'HH:mm")
         : "",
       category: appointment?.category || "meeting",
       location: appointment?.location || "",
@@ -72,10 +73,14 @@ export const AppointmentForm: React.FC<AppointmentFormProps> = ({
   };
 
   const handleFormSubmit = (data: any) => {
+    // Convert datetime-local to proper ISO string with Brazil timezone
+    const localDateTime = new Date(data.appointmentDate + ':00'); // Add seconds
+    const utcDateTime = fromZonedTime(localDateTime, 'America/Sao_Paulo');
+    
     const appointmentData: Omit<Appointment, 'id' | 'userId' | 'createdAt' | 'updatedAt'> = {
       title: data.title,
       description: data.description,
-      appointmentDate: data.appointmentDate,
+      appointmentDate: utcDateTime.toISOString(),
       category: data.category,
       location: data.location,
       recurrence: data.recurrence as 'once' | 'daily' | 'weekly' | 'monthly' | 'yearly',
