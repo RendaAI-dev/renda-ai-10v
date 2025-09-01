@@ -8,6 +8,8 @@ import MainLayout from "@/components/layout/MainLayout";
 import { n8nIntegrationService } from "@/services/n8nIntegrationService";
 import { getCurrentUser, updateUserProfile } from "@/services/userService";
 import { useToast } from "@/hooks/use-toast";
+import { Brain } from "lucide-react";
+import MCPTestInterface from "@/components/test/MCPTestInterface";
 
 export const TestN8NPage: React.FC = () => {
   const [testing, setTesting] = useState(false);
@@ -293,6 +295,19 @@ export const TestN8NPage: React.FC = () => {
                   Se necessário, faça login com um desses usuários para testar
                 </p>
               </div>
+            </CardContent>
+          </Card>
+
+          {/* MCP Test Interface */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Brain className="h-5 w-5" />
+                Teste MCP + OpenAI + Supabase
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <MCPTestInterface />
             </CardContent>
           </Card>
 
