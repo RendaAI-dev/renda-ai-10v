@@ -124,15 +124,67 @@ serve(async (req) => {
     const statusData = await statusResponse.json();
     console.log('Instance status:', statusData);
 
-    // If already connected, return success
-    if (statusData.state === 'open') {
+    // Check for connected status in different possible response formats
+    let isConnected = false;
+    let phoneNumber = null;
+
+    // Format 1: { instance: { state: "open", instanceName: "renda-ai" } }
+    if (statusData.instance?.state === 'open') {
+      isConnected = true;
+      phoneNumber = statusData.instance.instanceName || 'Conectado';
+    }
+    // Format 2: { state: "open" }
+    else if (statusData.state === 'open') {
+      isConnected = true;
+      phoneNumber = statusData.phoneNumber || statusData.instanceName || 'Conectado';
+    }
+
+    if (isConnected) {
+      console.log('Instance is connected, configuring webhook...');
+      
+      // Configure webhook URL
+      const webhookUrl = `${supabaseUrl}/functions/v1/evolution-webhook`;
+      
+      try {
+        const webhookResponse = await fetch(`${evolutionUrl}/webhook/set/${trimmedInstanceName}`, {
+          method: 'POST',
+          headers: {
+            'apikey': apiKey,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            enabled: true,
+            url: webhookUrl,
+            webhookByEvents: true,
+            events: [
+              'CONNECTION_UPDATE',
+              'MESSAGES_UPSERT',
+              'MESSAGES_UPDATE', 
+              'QRCODE_UPDATED',
+              'INSTANCE_STATUS',
+              'SEND_MESSAGE'
+            ]
+          }),
+        });
+        
+        if (webhookResponse.ok) {
+          console.log('Webhook configured successfully');
+        } else {
+          const webhookError = await webhookResponse.text();
+          console.warn('Failed to configure webhook:', webhookError);
+        }
+      } catch (webhookError) {
+        console.warn('Error configuring webhook:', webhookError);
+      }
+
       // Update database status
       await supabaseClient
         .from('poupeja_evolution_config')
         .update({
           connection_status: 'connected',
-          phone_connected: statusData.phoneNumber || 'Conectado',
+          phone_connected: phoneNumber,
           last_connection_check: new Date().toISOString(),
+          webhook_url: webhookUrl,
           qr_code: null
         })
         .eq('instance_name', trimmedInstanceName);
@@ -141,8 +193,8 @@ serve(async (req) => {
         JSON.stringify({ 
           success: true, 
           already_connected: true,
-          message: 'WhatsApp já está conectado!',
-          phone_number: statusData.phoneNumber
+          message: 'WhatsApp já está conectado e webhook configurado!',
+          phone_number: phoneNumber
         }),
         {
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
