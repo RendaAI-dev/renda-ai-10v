@@ -265,7 +265,9 @@ async function handleMessageUpsert(
     
     if (messageData.data && messageData.data.key) {
       // Estrutura aninhada: event.data.data.key
-      ({ key, message, pushName } = messageData.data)
+      key = messageData.data.key
+      message = messageData.data.message
+      pushName = messageData.data.pushName
     } else if (messageData.key) {
       // Estrutura direta: event.data.key
       key = messageData.key
