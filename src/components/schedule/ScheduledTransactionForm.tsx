@@ -15,6 +15,8 @@ import ScheduleTransactionTypeSelector from './ScheduleTransactionTypeSelector';
 import { getCategoriesByType } from '@/services/categoryService';
 import { Category } from '@/types/categories';
 import CategoryIcon from '@/components/categories/CategoryIcon';
+import { Switch } from '@/components/ui/switch';
+import { useReminders } from '@/hooks/useReminders';
 
 interface ScheduledTransactionFormProps {
   open: boolean;
@@ -38,6 +40,7 @@ const ScheduledTransactionForm: React.FC<ScheduledTransactionFormProps> = ({
   const [isOnline] = useState(navigator.onLine);
   const [categories, setCategories] = useState<Category[]>([]);
   const [loadingCategories, setLoadingCategories] = useState(true);
+  const { requestNotificationPermission, isNotificationSupported, isPermissionGranted } = useReminders([]);
 
   // Schema for the scheduled transaction form
   const formSchema = z.object({
@@ -48,6 +51,8 @@ const ScheduledTransactionForm: React.FC<ScheduledTransactionFormProps> = ({
     scheduledDate: z.string().min(1, { message: t('validation.required') }),
     recurrence: z.enum(['once', 'daily', 'weekly', 'monthly', 'yearly']),
     goalId: z.string().optional(),
+    reminderEnabled: z.boolean(),
+    reminderTime: z.number().optional(),
   });
 
   // Default form values
@@ -61,6 +66,8 @@ const ScheduledTransactionForm: React.FC<ScheduledTransactionFormProps> = ({
       : new Date().toISOString().split('T')[0],
     recurrence: (initialData?.recurrence as 'once' | 'daily' | 'weekly' | 'monthly' | 'yearly') || 'once',
     goalId: initialData?.goalId || undefined,
+    reminderEnabled: initialData?.reminderEnabled || false,
+    reminderTime: initialData?.reminderTime || 60,
   };
 
   // Form setup
@@ -117,6 +124,8 @@ const ScheduledTransactionForm: React.FC<ScheduledTransactionFormProps> = ({
         scheduledDate: new Date(initialData.scheduledDate).toISOString().split('T')[0],
         recurrence: initialData.recurrence || 'once',
         goalId: initialData.goalId,
+        reminderEnabled: initialData.reminderEnabled || false,
+        reminderTime: initialData.reminderTime || 60,
       });
       setSelectedType(initialData.type);
     }
@@ -143,6 +152,8 @@ const ScheduledTransactionForm: React.FC<ScheduledTransactionFormProps> = ({
         scheduledDate: new Date(values.scheduledDate).toISOString(),
         recurrence: values.recurrence,
         goalId: values.goalId,
+        reminderEnabled: values.reminderEnabled,
+        reminderTime: values.reminderTime,
       });
     } else if (initialData) {
       // Find the selected category to get both name and id
@@ -157,6 +168,8 @@ const ScheduledTransactionForm: React.FC<ScheduledTransactionFormProps> = ({
         scheduledDate: new Date(values.scheduledDate).toISOString(),
         recurrence: values.recurrence,
         goalId: values.goalId,
+        reminderEnabled: values.reminderEnabled,
+        reminderTime: values.reminderTime,
       });
     }
     onOpenChange(false);
@@ -297,6 +310,67 @@ const ScheduledTransactionForm: React.FC<ScheduledTransactionFormProps> = ({
                   </FormItem>
                 )}
               />
+
+              {/* Reminder Section */}
+              <div className="space-y-4 p-4 rounded-lg bg-muted/30 border">
+                <div className="flex items-center justify-between">
+                  <div className="space-y-1">
+                    <FormLabel className="text-sm font-medium">{t('common.reminder')}</FormLabel>
+                    <p className="text-xs text-muted-foreground">
+                      {isNotificationSupported() 
+                        ? t('schedule.notificationPermissionDescription')
+                        : t('schedule.notificationNotSupported')
+                      }
+                    </p>
+                  </div>
+                  <FormField
+                    control={form.control}
+                    name="reminderEnabled"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormControl>
+                          <Switch
+                            checked={field.value}
+                            onCheckedChange={async (checked) => {
+                              if (checked && !isPermissionGranted()) {
+                                const granted = await requestNotificationPermission();
+                                if (!granted) return;
+                              }
+                              field.onChange(checked);
+                            }}
+                            disabled={!isNotificationSupported()}
+                          />
+                        </FormControl>
+                      </FormItem>
+                    )}
+                  />
+                </div>
+
+                {form.watch('reminderEnabled') && (
+                  <FormField
+                    control={form.control}
+                    name="reminderTime"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-sm">{t('schedule.reminderTime')}</FormLabel>
+                        <Select onValueChange={(value) => field.onChange(parseInt(value))} value={field.value?.toString()}>
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder={t('schedule.reminderTime')} />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            <SelectItem value="15">{t('schedule.reminderOptions.15')}</SelectItem>
+                            <SelectItem value="60">{t('schedule.reminderOptions.60')}</SelectItem>
+                            <SelectItem value="1440">{t('schedule.reminderOptions.1440')}</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                )}
+              </div>
 
               <DialogFooter className="gap-2 justify-between sm:justify-end">
                 {mode === 'edit' && (

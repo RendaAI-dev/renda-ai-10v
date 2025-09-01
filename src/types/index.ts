@@ -56,6 +56,10 @@ export interface ScheduledTransaction {
   paidAmount?: number;
   lastExecutionDate?: string; // ISO date string
   nextExecutionDate?: string; // ISO date string
+  // Reminder fields
+  reminderEnabled?: boolean;
+  reminderTime?: number; // Minutes before the scheduled date (15, 60, 1440 for 1 day)
+  reminderSent?: boolean;
   // Database fields for compatibility
   category_id?: string;
   goal_id?: string;
@@ -64,6 +68,9 @@ export interface ScheduledTransaction {
   paid_date?: string;
   last_execution_date?: string;
   next_execution_date?: string;
+  reminder_enabled?: boolean;
+  reminder_time?: number;
+  reminder_sent?: boolean;
   created_at?: string;
 }
 

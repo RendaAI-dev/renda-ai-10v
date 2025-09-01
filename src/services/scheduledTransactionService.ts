@@ -18,20 +18,23 @@ export const getScheduledTransactions = async (): Promise<ScheduledTransaction[]
     return data.map((item) => ({
       id: item.id,
       type: item.type as 'income' | 'expense',
-      amount: item.amount,
-      category: item.category?.name || "Outros",
-      category_id: item.category_id,
-      categoryIcon: item.category?.icon || "circle",
-      categoryColor: item.category?.color || "#607D8B",
-      description: item.description || "",
-      scheduledDate: item.scheduled_date,
-      recurrence: item.recurrence as 'once' | 'daily' | 'weekly' | 'monthly' | 'yearly' | undefined,
-      goalId: item.goal_id,
-      status: item.status as 'pending' | 'paid' | 'overdue' | 'upcoming' | undefined,
-      paidDate: item.paid_date,
-      paidAmount: item.paid_amount,
-      lastExecutionDate: item.last_execution_date,
-      nextExecutionDate: item.next_execution_date,
+        amount: item.amount,
+        category: item.category?.name || "Outros",
+        category_id: item.category_id,
+        categoryIcon: item.category?.icon || "circle",
+        categoryColor: item.category?.color || "#607D8B",
+        description: item.description || "",
+        scheduledDate: item.scheduled_date,
+        recurrence: item.recurrence as 'once' | 'daily' | 'weekly' | 'monthly' | 'yearly' | undefined,
+        goalId: item.goal_id,
+        status: item.status as 'pending' | 'paid' | 'overdue' | 'upcoming' | undefined,
+        paidDate: item.paid_date,
+        paidAmount: item.paid_amount,
+        lastExecutionDate: item.last_execution_date,
+        nextExecutionDate: item.next_execution_date,
+        reminderEnabled: false,
+        reminderTime: undefined,
+        reminderSent: false,
     }));
   } catch (error) {
     console.error("Error fetching scheduled transactions:", error);
@@ -113,6 +116,9 @@ export const addScheduledTransaction = async (
       paidAmount: data.paid_amount,
       lastExecutionDate: data.last_execution_date,
       nextExecutionDate: data.next_execution_date,
+      reminderEnabled: false,
+      reminderTime: undefined,
+      reminderSent: false,
     };
   } catch (error) {
     console.error("Error adding scheduled transaction:", error);
@@ -188,6 +194,9 @@ export const updateScheduledTransaction = async (
       paidAmount: data.paid_amount,
       lastExecutionDate: data.last_execution_date,
       nextExecutionDate: data.next_execution_date,
+      reminderEnabled: false,
+      reminderTime: undefined,
+      reminderSent: false,
     };
   } catch (error) {
     console.error("Error updating scheduled transaction:", error);

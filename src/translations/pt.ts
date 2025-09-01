@@ -42,6 +42,8 @@ export default {
     values: 'valores',
     close: 'Fechar',
     available: 'Disponível',
+    reminder: 'Lembrete',
+    reminders: 'Lembretes',
   },
   theme: {
     light: "Claro",
@@ -542,6 +544,17 @@ export default {
     alreadyPaid: 'Já Pago',
     needAttention: 'Precisa Atenção',
     confirmDeleteSchedule: 'Tem certeza que deseja excluir este agendamento?',
+    enableReminder: 'Ativar lembrete',
+    reminderTime: 'Tempo do lembrete',
+    reminderOptions: {
+      '15': '15 minutos antes',
+      '60': '1 hora antes',
+      '1440': '1 dia antes',
+    },
+    notificationPermission: 'Permissão para notificações',
+    notificationPermissionDescription: 'Conceda permissão para receber lembretes das suas transações agendadas.',
+    enableNotifications: 'Ativar notificações',
+    notificationNotSupported: 'Seu navegador não suporta notificações.',
   },
   errors: {
     pageNotFound: "404 - Página não encontrada",

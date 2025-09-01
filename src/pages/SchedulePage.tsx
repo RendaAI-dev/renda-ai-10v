@@ -19,6 +19,8 @@ import { deleteScheduledTransaction, getScheduledTransactions, markAsPaid } from
 import { formatCurrency } from '@/utils/transactionUtils';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import { useReminders } from '@/hooks/useReminders';
+import UpcomingExpensesAlert from '@/components/dashboard/UpcomingExpensesAlert';
 import { useIsMobile } from '@/hooks/use-mobile';
 
 const SchedulePage = () => {
@@ -38,6 +40,9 @@ const SchedulePage = () => {
   const { t, currency } = usePreferences();
   const { toast } = useToast();
   const isMobile = useIsMobile();
+  
+  // Initialize reminders hook
+  const { requestNotificationPermission, isNotificationSupported, isPermissionGranted } = useReminders(localScheduledTransactions);
 
   useEffect(() => {
     const handleOnline = () => setIsOnline(true);
