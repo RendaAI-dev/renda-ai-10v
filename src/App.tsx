@@ -28,6 +28,11 @@ import LandingPage from "./pages/LandingPage";
 import CheckoutPage from "./pages/CheckoutPage";
 import PaymentSuccessPage from "./pages/PaymentSuccessPage";
 import ThankYouPage from "./pages/ThankYouPage";
+import LoginPage from "./pages/LoginPage";
+import RegisterPage from "./pages/RegisterPage";
+import ForgotPasswordPage from "./pages/ForgotPasswordPage";
+import ResetPasswordPage from "./pages/ResetPasswordPage";
+import RegisterWithPlanPage from "./pages/RegisterWithPlanPage";
 
 const queryClient = new QueryClient();
 
@@ -61,6 +66,11 @@ function App() {
                          <Route path="/checkout" element={<CheckoutPage />} />
                          <Route path="/payment-success" element={<PaymentSuccessPage />} />
                          <Route path="/thank-you" element={<ThankYouPage />} />
+                         <Route path="/login" element={<LoginPage />} />
+                         <Route path="/register" element={<RegisterPage />} />
+                         <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+                         <Route path="/reset-password" element={<ResetPasswordPage />} />
+                         <Route path="/register-with-plan" element={<RegisterWithPlanPage />} />
                         <Route path="*" element={<div className="text-center p-8">Página não encontrada</div>} />
                       </Routes>
                     </BrowserRouter>
