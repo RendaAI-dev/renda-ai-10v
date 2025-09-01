@@ -14,844 +14,631 @@ export type Database = {
   }
   public: {
     Tables: {
-      budgets: {
+      poupeja_categories: {
         Row: {
-          allocated_amount: number
-          category_id: string
+          color: string
           created_at: string | null
-          end_date: string
+          icon: string | null
           id: string
-          period: string
-          spent_amount: number | null
-          start_date: string
-          updated_at: string | null
-          user_id: string
-        }
-        Insert: {
-          allocated_amount: number
-          category_id: string
-          created_at?: string | null
-          end_date: string
-          id?: string
-          period: string
-          spent_amount?: number | null
-          start_date: string
-          updated_at?: string | null
-          user_id: string
-        }
-        Update: {
-          allocated_amount?: number
-          category_id?: string
-          created_at?: string | null
-          end_date?: string
-          id?: string
-          period?: string
-          spent_amount?: number | null
-          start_date?: string
-          updated_at?: string | null
-          user_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "budgets_category_id_fkey"
-            columns: ["category_id"]
-            isOneToOne: false
-            referencedRelation: "categories"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "budgets_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      categories: {
-        Row: {
-          color: string
-          created_at: string
-          id: string
-          keywords: string[] | null
+          is_default: boolean | null
           name: string
           type: string
-          user_id: string
+          user_id: string | null
         }
         Insert: {
-          color: string
-          created_at?: string
+          color?: string
+          created_at?: string | null
+          icon?: string | null
           id?: string
-          keywords?: string[] | null
+          is_default?: boolean | null
           name: string
           type: string
-          user_id: string
+          user_id?: string | null
         }
         Update: {
           color?: string
-          created_at?: string
+          created_at?: string | null
+          icon?: string | null
           id?: string
-          keywords?: string[] | null
+          is_default?: boolean | null
           name?: string
           type?: string
-          user_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "categories_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      debts: {
-        Row: {
-          category: string | null
-          created_at: string | null
-          creditor: string | null
-          description: string
-          due_date: string
-          id: string
-          paid_amount: number | null
-          total_amount: number
-          user_id: string
-        }
-        Insert: {
-          category?: string | null
-          created_at?: string | null
-          creditor?: string | null
-          description: string
-          due_date: string
-          id?: string
-          paid_amount?: number | null
-          total_amount: number
-          user_id: string
-        }
-        Update: {
-          category?: string | null
-          created_at?: string | null
-          creditor?: string | null
-          description?: string
-          due_date?: string
-          id?: string
-          paid_amount?: number | null
-          total_amount?: number
-          user_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "debts_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      goals: {
-        Row: {
-          category_id: string | null
-          created_at: string
-          current_amount: number
-          deadline: string | null
-          description: string | null
-          goal_type: string | null
-          id: string
-          target_amount: number
-          title: string
-          user_id: string
-        }
-        Insert: {
-          category_id?: string | null
-          created_at?: string
-          current_amount?: number
-          deadline?: string | null
-          description?: string | null
-          goal_type?: string | null
-          id?: string
-          target_amount: number
-          title: string
-          user_id: string
-        }
-        Update: {
-          category_id?: string | null
-          created_at?: string
-          current_amount?: number
-          deadline?: string | null
-          description?: string | null
-          goal_type?: string | null
-          id?: string
-          target_amount?: number
-          title?: string
-          user_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "goals_category_id_fkey"
-            columns: ["category_id"]
-            isOneToOne: false
-            referencedRelation: "categories"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "goals_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      profiles: {
-        Row: {
-          address_line_2: string | null
-          address_type: Database["public"]["Enums"]["address_type_enum"] | null
-          avatar_url: string | null
-          budget_alerts_enabled: boolean | null
-          city: string | null
-          country: string | null
-          created_at: string
-          currency: string
-          date_of_birth: string | null
-          email: string | null
-          email_notifications_enabled: boolean | null
-          full_name: string | null
-          goals_progress_enabled: boolean | null
-          id: string
-          monthly_income: number | null
-          push_notifications_enabled: boolean | null
-          state_province: string | null
-          street_address: string | null
-          theme_preference: string | null
-          transactions_confirmation_enabled: boolean | null
-          whatsapp: string | null
-          zip_code: string | null
-        }
-        Insert: {
-          address_line_2?: string | null
-          address_type?: Database["public"]["Enums"]["address_type_enum"] | null
-          avatar_url?: string | null
-          budget_alerts_enabled?: boolean | null
-          city?: string | null
-          country?: string | null
-          created_at?: string
-          currency?: string
-          date_of_birth?: string | null
-          email?: string | null
-          email_notifications_enabled?: boolean | null
-          full_name?: string | null
-          goals_progress_enabled?: boolean | null
-          id: string
-          monthly_income?: number | null
-          push_notifications_enabled?: boolean | null
-          state_province?: string | null
-          street_address?: string | null
-          theme_preference?: string | null
-          transactions_confirmation_enabled?: boolean | null
-          whatsapp?: string | null
-          zip_code?: string | null
-        }
-        Update: {
-          address_line_2?: string | null
-          address_type?: Database["public"]["Enums"]["address_type_enum"] | null
-          avatar_url?: string | null
-          budget_alerts_enabled?: boolean | null
-          city?: string | null
-          country?: string | null
-          created_at?: string
-          currency?: string
-          date_of_birth?: string | null
-          email?: string | null
-          email_notifications_enabled?: boolean | null
-          full_name?: string | null
-          goals_progress_enabled?: boolean | null
-          id?: string
-          monthly_income?: number | null
-          push_notifications_enabled?: boolean | null
-          state_province?: string | null
-          street_address?: string | null
-          theme_preference?: string | null
-          transactions_confirmation_enabled?: boolean | null
-          whatsapp?: string | null
-          zip_code?: string | null
+          user_id?: string | null
         }
         Relationships: []
       }
-      recurring_transactions: {
+      poupeja_customers: {
+        Row: {
+          created_at: string | null
+          email: string
+          id: string
+          stripe_customer_id: string
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          email: string
+          id?: string
+          stripe_customer_id: string
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          email?: string
+          id?: string
+          stripe_customer_id?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      poupeja_goals: {
+        Row: {
+          color: string | null
+          created_at: string | null
+          current_amount: number | null
+          deadline: string | null
+          end_date: string | null
+          id: string
+          name: string
+          start_date: string
+          target_amount: number
+          updated_at: string | null
+          user_id: string | null
+        }
+        Insert: {
+          color?: string | null
+          created_at?: string | null
+          current_amount?: number | null
+          deadline?: string | null
+          end_date?: string | null
+          id?: string
+          name: string
+          start_date: string
+          target_amount: number
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          color?: string | null
+          created_at?: string | null
+          current_amount?: number | null
+          deadline?: string | null
+          end_date?: string | null
+          id?: string
+          name?: string
+          start_date?: string
+          target_amount?: number
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      poupeja_scheduled_transactions: {
         Row: {
           amount: number
           category_id: string | null
           created_at: string | null
-          description: string
-          end_date: string | null
-          frequency: string
+          description: string | null
+          goal_id: string | null
           id: string
-          is_active: boolean | null
-          last_generated_date: string | null
-          start_date: string
+          last_execution_date: string | null
+          next_execution_date: string | null
+          paid_amount: number | null
+          paid_date: string | null
+          recurrence: string | null
+          scheduled_date: string
+          status: string | null
           type: string
           updated_at: string | null
-          user_id: string
+          user_id: string | null
         }
         Insert: {
           amount: number
           category_id?: string | null
           created_at?: string | null
-          description: string
-          end_date?: string | null
-          frequency: string
+          description?: string | null
+          goal_id?: string | null
           id?: string
-          is_active?: boolean | null
-          last_generated_date?: string | null
-          start_date: string
+          last_execution_date?: string | null
+          next_execution_date?: string | null
+          paid_amount?: number | null
+          paid_date?: string | null
+          recurrence?: string | null
+          scheduled_date: string
+          status?: string | null
           type: string
           updated_at?: string | null
-          user_id: string
+          user_id?: string | null
         }
         Update: {
           amount?: number
           category_id?: string | null
           created_at?: string | null
-          description?: string
-          end_date?: string | null
-          frequency?: string
+          description?: string | null
+          goal_id?: string | null
           id?: string
-          is_active?: boolean | null
-          last_generated_date?: string | null
-          start_date?: string
+          last_execution_date?: string | null
+          next_execution_date?: string | null
+          paid_amount?: number | null
+          paid_date?: string | null
+          recurrence?: string | null
+          scheduled_date?: string
+          status?: string | null
           type?: string
           updated_at?: string | null
-          user_id?: string
+          user_id?: string | null
         }
         Relationships: [
           {
-            foreignKeyName: "recurring_transactions_category_id_fkey"
+            foreignKeyName: "poupeja_scheduled_transactions_category_id_fkey"
             columns: ["category_id"]
             isOneToOne: false
-            referencedRelation: "categories"
+            referencedRelation: "poupeja_categories"
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "recurring_transactions_user_id_fkey"
-            columns: ["user_id"]
+            foreignKeyName: "poupeja_scheduled_transactions_goal_id_fkey"
+            columns: ["goal_id"]
             isOneToOne: false
-            referencedRelation: "profiles"
+            referencedRelation: "poupeja_goals"
             referencedColumns: ["id"]
           },
         ]
       }
-      smart_budget_rules: {
+      poupeja_settings: {
         Row: {
+          category: string
           created_at: string | null
+          created_by: string | null
+          description: string | null
+          encrypted: boolean | null
           id: string
-          is_active: boolean | null
-          percentage: number
-          rule_name: string
-          rule_type: string
-          target_category_id: string | null
+          key: string
           updated_at: string | null
-          user_id: string
+          updated_by: string | null
+          value: string | null
+          value_type: string | null
         }
         Insert: {
+          category: string
           created_at?: string | null
+          created_by?: string | null
+          description?: string | null
+          encrypted?: boolean | null
           id?: string
-          is_active?: boolean | null
-          percentage: number
-          rule_name: string
-          rule_type: string
-          target_category_id?: string | null
+          key: string
           updated_at?: string | null
-          user_id: string
+          updated_by?: string | null
+          value?: string | null
+          value_type?: string | null
         }
         Update: {
+          category?: string
           created_at?: string | null
+          created_by?: string | null
+          description?: string | null
+          encrypted?: boolean | null
           id?: string
-          is_active?: boolean | null
-          percentage?: number
-          rule_name?: string
-          rule_type?: string
-          target_category_id?: string | null
+          key?: string
           updated_at?: string | null
-          user_id?: string
+          updated_by?: string | null
+          value?: string | null
+          value_type?: string | null
+        }
+        Relationships: []
+      }
+      poupeja_settings_history: {
+        Row: {
+          action: string
+          category: string
+          changed_at: string | null
+          changed_by: string | null
+          id: string
+          key: string
+          new_value: string | null
+          old_value: string | null
+          setting_id: string | null
+        }
+        Insert: {
+          action: string
+          category: string
+          changed_at?: string | null
+          changed_by?: string | null
+          id?: string
+          key: string
+          new_value?: string | null
+          old_value?: string | null
+          setting_id?: string | null
+        }
+        Update: {
+          action?: string
+          category?: string
+          changed_at?: string | null
+          changed_by?: string | null
+          id?: string
+          key?: string
+          new_value?: string | null
+          old_value?: string | null
+          setting_id?: string | null
         }
         Relationships: [
           {
-            foreignKeyName: "smart_budget_rules_target_category_id_fkey"
-            columns: ["target_category_id"]
+            foreignKeyName: "poupeja_settings_history_setting_id_fkey"
+            columns: ["setting_id"]
             isOneToOne: false
-            referencedRelation: "categories"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "smart_budget_rules_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
+            referencedRelation: "poupeja_settings"
             referencedColumns: ["id"]
           },
         ]
       }
-      stripe_customers: {
-        Row: {
-          created_at: string | null
-          customer_id: string
-          deleted_at: string | null
-          id: number
-          updated_at: string | null
-          user_id: string
-        }
-        Insert: {
-          created_at?: string | null
-          customer_id: string
-          deleted_at?: string | null
-          id?: never
-          updated_at?: string | null
-          user_id: string
-        }
-        Update: {
-          created_at?: string | null
-          customer_id?: string
-          deleted_at?: string | null
-          id?: never
-          updated_at?: string | null
-          user_id?: string
-        }
-        Relationships: []
-      }
-      stripe_orders: {
-        Row: {
-          amount_subtotal: number
-          amount_total: number
-          checkout_session_id: string
-          created_at: string | null
-          currency: string
-          customer_id: string
-          deleted_at: string | null
-          id: number
-          payment_intent_id: string
-          payment_status: string
-          status: Database["public"]["Enums"]["stripe_order_status"]
-          updated_at: string | null
-        }
-        Insert: {
-          amount_subtotal: number
-          amount_total: number
-          checkout_session_id: string
-          created_at?: string | null
-          currency: string
-          customer_id: string
-          deleted_at?: string | null
-          id?: never
-          payment_intent_id: string
-          payment_status: string
-          status?: Database["public"]["Enums"]["stripe_order_status"]
-          updated_at?: string | null
-        }
-        Update: {
-          amount_subtotal?: number
-          amount_total?: number
-          checkout_session_id?: string
-          created_at?: string | null
-          currency?: string
-          customer_id?: string
-          deleted_at?: string | null
-          id?: never
-          payment_intent_id?: string
-          payment_status?: string
-          status?: Database["public"]["Enums"]["stripe_order_status"]
-          updated_at?: string | null
-        }
-        Relationships: []
-      }
-      stripe_subscriptions: {
+      poupeja_subscriptions: {
         Row: {
           cancel_at_period_end: boolean | null
           created_at: string | null
-          current_period_end: number | null
-          current_period_start: number | null
-          customer_id: string
-          deleted_at: string | null
-          id: number
-          payment_method_brand: string | null
-          payment_method_last4: string | null
-          price_id: string | null
-          status: Database["public"]["Enums"]["stripe_subscription_status"]
-          subscription_id: string | null
-          updated_at: string | null
-        }
-        Insert: {
-          cancel_at_period_end?: boolean | null
-          created_at?: string | null
-          current_period_end?: number | null
-          current_period_start?: number | null
-          customer_id: string
-          deleted_at?: string | null
-          id?: never
-          payment_method_brand?: string | null
-          payment_method_last4?: string | null
-          price_id?: string | null
-          status: Database["public"]["Enums"]["stripe_subscription_status"]
-          subscription_id?: string | null
-          updated_at?: string | null
-        }
-        Update: {
-          cancel_at_period_end?: boolean | null
-          created_at?: string | null
-          current_period_end?: number | null
-          current_period_start?: number | null
-          customer_id?: string
-          deleted_at?: string | null
-          id?: never
-          payment_method_brand?: string | null
-          payment_method_last4?: string | null
-          price_id?: string | null
-          status?: Database["public"]["Enums"]["stripe_subscription_status"]
-          subscription_id?: string | null
-          updated_at?: string | null
-        }
-        Relationships: []
-      }
-      subscriptions: {
-        Row: {
-          created_at: string
           current_period_end: string | null
           current_period_start: string | null
           id: string
-          plan_id: string
+          plan_type: string
           status: string
-          updated_at: string
-          user_id: string
+          stripe_customer_id: string | null
+          stripe_subscription_id: string | null
+          updated_at: string | null
+          user_id: string | null
         }
         Insert: {
-          created_at?: string
+          cancel_at_period_end?: boolean | null
+          created_at?: string | null
           current_period_end?: string | null
           current_period_start?: string | null
           id?: string
-          plan_id: string
+          plan_type: string
           status: string
-          updated_at?: string
-          user_id: string
+          stripe_customer_id?: string | null
+          stripe_subscription_id?: string | null
+          updated_at?: string | null
+          user_id?: string | null
         }
         Update: {
-          created_at?: string
+          cancel_at_period_end?: boolean | null
+          created_at?: string | null
           current_period_end?: string | null
           current_period_start?: string | null
           id?: string
-          plan_id?: string
+          plan_type?: string
           status?: string
-          updated_at?: string
-          user_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "subscriptions_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      system_error_logs: {
-        Row: {
-          context: Json | null
-          error_message: string | null
-          error_stack: string | null
-          execution_id: string | null
-          http_status: number | null
-          id: number
-          level: string
-          node_name: string | null
-          payload: Json | null
-          phone_number: string | null
-          ts: string | null
-          workflow_id: string | null
-          workflow_name: string | null
-        }
-        Insert: {
-          context?: Json | null
-          error_message?: string | null
-          error_stack?: string | null
-          execution_id?: string | null
-          http_status?: number | null
-          id?: number
-          level?: string
-          node_name?: string | null
-          payload?: Json | null
-          phone_number?: string | null
-          ts?: string | null
-          workflow_id?: string | null
-          workflow_name?: string | null
-        }
-        Update: {
-          context?: Json | null
-          error_message?: string | null
-          error_stack?: string | null
-          execution_id?: string | null
-          http_status?: number | null
-          id?: number
-          level?: string
-          node_name?: string | null
-          payload?: Json | null
-          phone_number?: string | null
-          ts?: string | null
-          workflow_id?: string | null
-          workflow_name?: string | null
+          stripe_customer_id?: string | null
+          stripe_subscription_id?: string | null
+          updated_at?: string | null
+          user_id?: string | null
         }
         Relationships: []
       }
-      transactions: {
+      poupeja_transactions: {
         Row: {
           amount: number
           category_id: string | null
-          created_at: string
-          description: string
+          created_at: string | null
+          date: string
+          description: string | null
+          goal_id: string | null
           id: string
-          transaction_date: string
           type: string
-          user_id: string
+          updated_at: string | null
+          user_id: string | null
         }
         Insert: {
           amount: number
           category_id?: string | null
-          created_at?: string
-          description: string
+          created_at?: string | null
+          date: string
+          description?: string | null
+          goal_id?: string | null
           id?: string
-          transaction_date: string
           type: string
-          user_id: string
+          updated_at?: string | null
+          user_id?: string | null
         }
         Update: {
           amount?: number
           category_id?: string | null
-          created_at?: string
-          description?: string
+          created_at?: string | null
+          date?: string
+          description?: string | null
+          goal_id?: string | null
           id?: string
-          transaction_date?: string
           type?: string
-          user_id?: string
+          updated_at?: string | null
+          user_id?: string | null
         }
         Relationships: [
           {
-            foreignKeyName: "transactions_category_id_fkey"
+            foreignKeyName: "poupeja_transactions_category_id_fkey"
             columns: ["category_id"]
             isOneToOne: false
-            referencedRelation: "categories"
+            referencedRelation: "poupeja_categories"
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "transactions_user_id_fkey"
-            columns: ["user_id"]
+            foreignKeyName: "poupeja_transactions_goal_id_fkey"
+            columns: ["goal_id"]
             isOneToOne: false
-            referencedRelation: "profiles"
+            referencedRelation: "poupeja_goals"
             referencedColumns: ["id"]
           },
         ]
       }
-      user_suggestions: {
+      poupeja_uploads: {
         Row: {
           created_at: string | null
-          description: string
-          expires_at: string | null
+          file_name: string
+          file_path: string
+          file_size: number | null
           id: string
-          is_dismissed: boolean | null
-          is_read: boolean | null
-          priority: string | null
-          suggested_action: string | null
-          suggestion_type: string
-          title: string
+          mime_type: string | null
+          purpose: string | null
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          file_name: string
+          file_path: string
+          file_size?: number | null
+          id?: string
+          mime_type?: string | null
+          purpose?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          file_name?: string
+          file_path?: string
+          file_size?: number | null
+          id?: string
+          mime_type?: string | null
+          purpose?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "poupeja_uploads_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "poupeja_users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      poupeja_users: {
+        Row: {
+          created_at: string | null
+          email: string
+          id: string
+          name: string | null
+          phone: string | null
+          profile_image: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          email: string
+          id: string
+          name?: string | null
+          phone?: string | null
+          profile_image?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          email?: string
+          id?: string
+          name?: string | null
+          phone?: string | null
+          profile_image?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      user_roles: {
+        Row: {
+          created_at: string | null
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
           user_id: string
         }
         Insert: {
           created_at?: string | null
-          description: string
-          expires_at?: string | null
           id?: string
-          is_dismissed?: boolean | null
-          is_read?: boolean | null
-          priority?: string | null
-          suggested_action?: string | null
-          suggestion_type: string
-          title: string
+          role?: Database["public"]["Enums"]["app_role"]
           user_id: string
         }
         Update: {
           created_at?: string | null
-          description?: string
-          expires_at?: string | null
           id?: string
-          is_dismissed?: boolean | null
-          is_read?: boolean | null
-          priority?: string | null
-          suggested_action?: string | null
-          suggestion_type?: string
-          title?: string
+          role?: Database["public"]["Enums"]["app_role"]
           user_id?: string
         }
-        Relationships: [
-          {
-            foreignKeyName: "user_suggestions_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
     }
     Views: {
-      stripe_user_orders: {
-        Row: {
-          amount_subtotal: number | null
-          amount_total: number | null
-          checkout_session_id: string | null
-          currency: string | null
-          customer_id: string | null
-          order_date: string | null
-          order_id: number | null
-          order_status:
-            | Database["public"]["Enums"]["stripe_order_status"]
-            | null
-          payment_intent_id: string | null
-          payment_status: string | null
-        }
-        Relationships: []
-      }
-      stripe_user_subscriptions: {
-        Row: {
-          cancel_at_period_end: boolean | null
-          current_period_end: number | null
-          current_period_start: number | null
-          customer_id: string | null
-          payment_method_brand: string | null
-          payment_method_last4: string | null
-          price_id: string | null
-          subscription_id: string | null
-          subscription_status:
-            | Database["public"]["Enums"]["stripe_subscription_status"]
-            | null
-        }
-        Relationships: []
-      }
+      [_ in never]: never
     }
     Functions: {
-      buscar_cadastro_por_email_phone: {
-        Args: { p_email?: string; whatsaap?: string }
+      buscar_cadastro_por_email: {
+        Args: { p_email: string }
         Returns: {
-          address_line_2: string | null
-          address_type: Database["public"]["Enums"]["address_type_enum"] | null
-          avatar_url: string | null
-          budget_alerts_enabled: boolean | null
-          city: string | null
-          country: string | null
-          created_at: string
-          currency: string
-          date_of_birth: string | null
-          email: string | null
-          email_notifications_enabled: boolean | null
-          full_name: string | null
-          goals_progress_enabled: boolean | null
-          id: string
-          monthly_income: number | null
-          push_notifications_enabled: boolean | null
-          state_province: string | null
-          street_address: string | null
-          theme_preference: string | null
-          transactions_confirmation_enabled: boolean | null
-          whatsapp: string | null
-          zip_code: string | null
+          current_period_end: string
+          email: string
+          plan_type: string
+          subscription_status: string
+          user_id: string
         }[]
       }
-      calculate_debt_to_income_ratio: {
-        Args: Record<PropertyKey, never>
-        Returns: Json
+      buscar_cadastro_por_email_phone: {
+        Args: { p_email?: string; p_phone?: string }
+        Returns: {
+          current_period_end: string
+          email: string
+          phone: string
+          plan_type: string
+          subscription_status: string
+          user_id: string
+        }[]
       }
-      create_debt: {
+      check_user_role: {
         Args: {
-          p_category?: string
-          p_creditor?: string
-          p_description: string
-          p_due_date: string
-          p_total_amount: number
+          target_role: Database["public"]["Enums"]["app_role"]
+          user_id: string
         }
-        Returns: Json
-      }
-      delete_debt: {
-        Args: { p_debt_id: string }
         Returns: boolean
       }
-      get_debt_by_id: {
-        Args: { p_debt_id: string }
-        Returns: Json
+      confirm_user_email: {
+        Args: { user_email: string }
+        Returns: boolean
       }
-      get_debt_status: {
+      create_default_categories_for_user: {
+        Args: { user_id: string }
+        Returns: undefined
+      }
+      create_initial_admin_user: {
+        Args: { admin_email?: string }
+        Returns: undefined
+      }
+      create_update_goal_amount_function: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
+      decrypt_setting_value: {
+        Args: { p_encrypted_value: string }
+        Returns: string
+      }
+      encrypt_setting_value: {
+        Args: { p_value: string }
+        Returns: string
+      }
+      generate_upload_path: {
+        Args: { file_extension: string; user_id: string }
+        Returns: string
+      }
+      get_file_public_url: {
+        Args: { file_path: string }
+        Returns: string
+      }
+      get_setting: {
+        Args: { p_category: string; p_key: string }
+        Returns: string
+      }
+      get_settings_by_category: {
+        Args: { p_category: string }
+        Returns: {
+          description: string
+          encrypted: boolean
+          key: string
+          value: string
+          value_type: string
+        }[]
+      }
+      get_user_subscription_status: {
+        Args: { p_user_id?: string }
+        Returns: {
+          current_period_end: string
+          is_active: boolean
+          plan_type: string
+          status: string
+          subscription_id: string
+        }[]
+      }
+      grant_admin_access_to_user: {
+        Args: { target_email: string }
+        Returns: boolean
+      }
+      grant_admin_role: {
+        Args: { target_email: string }
+        Returns: boolean
+      }
+      has_role: {
         Args: {
-          p_due_date: string
-          p_paid_amount: number
-          p_total_amount: number
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
+      is_admin: {
+        Args: { user_id?: string }
+        Returns: boolean
+      }
+      migrate_existing_auth_users: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
+      recover_missing_users: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          recovered_count: number
+        }[]
+      }
+      register_upload: {
+        Args: {
+          p_file_name: string
+          p_file_path: string
+          p_file_size?: number
+          p_mime_type?: string
+          p_purpose?: string
         }
         Returns: string
       }
-      get_debt_summary: {
+      test_trigger_system: {
         Args: Record<PropertyKey, never>
-        Returns: Json
+        Returns: {
+          details: string
+          status: string
+          test_name: string
+        }[]
       }
-      get_overdue_debts: {
+      test_user_creation_system: {
         Args: Record<PropertyKey, never>
-        Returns: Json
+        Returns: string
       }
-      get_remaining_amount: {
-        Args: { p_paid_amount: number; p_total_amount: number }
+      update_goal_amount: {
+        Args: { p_amount_change: number; p_goal_id: string }
         Returns: number
       }
-      get_upcoming_debts: {
-        Args: { p_days_ahead?: number }
-        Returns: Json
-      }
-      get_user_debts: {
+      update_subscription_status: {
         Args: {
-          p_category?: string
-          p_due_date_after?: string
-          p_due_date_before?: string
-          p_status?: string
+          p_cancel_at_period_end?: boolean
+          p_current_period_end?: string
+          p_current_period_start?: string
+          p_status: string
+          p_stripe_subscription_id: string
         }
-        Returns: Json
+        Returns: string
       }
-      register_debt_payment: {
-        Args: { p_debt_id: string; p_payment_amount: number }
-        Returns: Json
-      }
-      settle_debt: {
-        Args: { p_debt_id: string }
-        Returns: Json
-      }
-      update_debt: {
+      upsert_setting: {
         Args: {
-          p_category?: string
-          p_creditor?: string
-          p_debt_id: string
+          p_category: string
           p_description?: string
-          p_due_date?: string
-          p_total_amount?: number
+          p_encrypted?: boolean
+          p_key: string
+          p_value: string
+          p_value_type?: string
         }
-        Returns: Json
+        Returns: string
+      }
+      validate_file_type: {
+        Args: { allowed_extensions?: string[]; file_name: string }
+        Returns: boolean
+      }
+      verify_installation: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          component: string
+          details: string
+          status: string
+        }[]
       }
     }
     Enums: {
-      address_type_enum: "Home" | "Work" | "Billing" | "Shipping"
-      stripe_order_status: "pending" | "completed" | "canceled"
-      stripe_subscription_status:
-        | "not_started"
-        | "incomplete"
-        | "incomplete_expired"
-        | "trialing"
-        | "active"
-        | "past_due"
-        | "canceled"
-        | "unpaid"
-        | "paused"
+      app_role: "admin" | "user"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -979,19 +766,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      address_type_enum: ["Home", "Work", "Billing", "Shipping"],
-      stripe_order_status: ["pending", "completed", "canceled"],
-      stripe_subscription_status: [
-        "not_started",
-        "incomplete",
-        "incomplete_expired",
-        "trialing",
-        "active",
-        "past_due",
-        "canceled",
-        "unpaid",
-        "paused",
-      ],
+      app_role: ["admin", "user"],
     },
   },
 } as const
