@@ -3,6 +3,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { ThemeProvider } from "next-themes";
 import { PreferencesProvider } from "@/contexts/PreferencesContext";
+import { SubscriptionProvider } from "@/contexts/SubscriptionContext";
 import { BrandingProvider } from "@/contexts/BrandingContext";
 import { AppProvider } from "@/contexts/AppContext";
 import { SupabaseInitializer } from "@/components/common/SupabaseInitializer";
@@ -17,7 +18,8 @@ function App() {
       <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
         <BrandingProvider>
           <PreferencesProvider>
-            <AppProvider>
+            <SubscriptionProvider>
+              <AppProvider>
               <SupabaseInitializer>
                 <BrowserRouter>
                   <Routes>
@@ -29,7 +31,8 @@ function App() {
                 </BrowserRouter>
               </SupabaseInitializer>
             </AppProvider>
-          </PreferencesProvider>
+          </SubscriptionProvider>
+        </PreferencesProvider>
         </BrandingProvider>
       </ThemeProvider>
     </QueryClientProvider>
