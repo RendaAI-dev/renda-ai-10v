@@ -766,6 +766,42 @@ export type Database = {
         }
         Relationships: []
       }
+      poupeja_webhook_logs: {
+        Row: {
+          created_at: string
+          error_message: string | null
+          event_type: string
+          id: string
+          instance: string
+          message: string | null
+          payload: Json | null
+          processed: boolean
+          success: boolean
+        }
+        Insert: {
+          created_at?: string
+          error_message?: string | null
+          event_type: string
+          id?: string
+          instance: string
+          message?: string | null
+          payload?: Json | null
+          processed?: boolean
+          success?: boolean
+        }
+        Update: {
+          created_at?: string
+          error_message?: string | null
+          event_type?: string
+          id?: string
+          instance?: string
+          message?: string | null
+          payload?: Json | null
+          processed?: boolean
+          success?: boolean
+        }
+        Relationships: []
+      }
       poupeja_whatsapp_queue: {
         Row: {
           appointment_id: string | null

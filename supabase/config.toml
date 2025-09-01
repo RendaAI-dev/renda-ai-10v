@@ -1,4 +1,7 @@
 project_id = "pqhiyqresnjiktkyjshh"
 
+[functions.evolution-webhook]
+verify_jwt = false
+
 [functions.process-appointment-reminders]
 verify_jwt = false
