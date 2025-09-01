@@ -41,6 +41,7 @@ export default {
     hide: 'Ocultar',
     values: 'valores',
     close: 'Fechar',
+    available: 'Disponível',
   },
   theme: {
     light: "Claro",

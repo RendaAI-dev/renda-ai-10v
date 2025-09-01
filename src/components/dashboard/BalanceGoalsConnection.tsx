@@ -47,7 +47,7 @@ const BalanceGoalsConnection: React.FC<BalanceGoalsConnectionProps> = ({
           {/* Breakdown do Saldo */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {/* Saldo Disponível */}
-            <div className="p-4 rounded-lg bg-green-50 dark:bg-green-950/20 border border-green-200 dark:border-green-800">
+            <div className="p-4 rounded-lg bg-secondary/10 border border-secondary/20">
               <div className="flex items-center justify-between mb-2">
                 <div className="flex items-center gap-2">
                   <Wallet className="h-4 w-4 text-green-600 dark:text-green-400" />
