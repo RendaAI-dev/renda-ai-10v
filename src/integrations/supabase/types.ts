@@ -210,37 +210,49 @@ export type Database = {
       }
       poupeja_message_templates: {
         Row: {
+          channel: string | null
+          content: string
           created_at: string
+          description: string | null
           id: string
           is_active: boolean | null
-          is_default: boolean | null
-          message_content: string
+          is_system: boolean | null
+          language: string | null
+          name: string
+          subject: string | null
           template_type: string
-          title: string
           updated_at: string
-          user_id: string | null
+          variables: string[] | null
         }
         Insert: {
+          channel?: string | null
+          content: string
           created_at?: string
+          description?: string | null
           id?: string
           is_active?: boolean | null
-          is_default?: boolean | null
-          message_content: string
+          is_system?: boolean | null
+          language?: string | null
+          name: string
+          subject?: string | null
           template_type: string
-          title: string
           updated_at?: string
-          user_id?: string | null
+          variables?: string[] | null
         }
         Update: {
+          channel?: string | null
+          content?: string
           created_at?: string
+          description?: string | null
           id?: string
           is_active?: boolean | null
-          is_default?: boolean | null
-          message_content?: string
+          is_system?: boolean | null
+          language?: string | null
+          name?: string
+          subject?: string | null
           template_type?: string
-          title?: string
           updated_at?: string
-          user_id?: string | null
+          variables?: string[] | null
         }
         Relationships: []
       }
