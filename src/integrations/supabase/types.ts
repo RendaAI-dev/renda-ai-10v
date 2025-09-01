@@ -14,6 +14,57 @@ export type Database = {
   }
   public: {
     Tables: {
+      poupeja_appointments: {
+        Row: {
+          appointment_date: string
+          category: string
+          created_at: string
+          description: string | null
+          id: string
+          location: string | null
+          recurrence: string | null
+          reminder_enabled: boolean | null
+          reminder_sent: boolean | null
+          reminder_times: number[] | null
+          status: string
+          title: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          appointment_date: string
+          category?: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          location?: string | null
+          recurrence?: string | null
+          reminder_enabled?: boolean | null
+          reminder_sent?: boolean | null
+          reminder_times?: number[] | null
+          status?: string
+          title: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          appointment_date?: string
+          category?: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          location?: string | null
+          recurrence?: string | null
+          reminder_enabled?: boolean | null
+          reminder_sent?: boolean | null
+          reminder_times?: number[] | null
+          status?: string
+          title?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       poupeja_budgets: {
         Row: {
           amount: number

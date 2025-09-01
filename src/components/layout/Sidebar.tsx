@@ -136,6 +136,11 @@ const Sidebar: React.FC<SidebarProps> = ({ onProfileClick, onConfigClick }) => {
       href: '/schedule'
     },
     {
+      icon: Calendar,
+      label: "Compromissos",
+      href: '/appointments'
+    },
+    {
       icon: BarChart3,
       label: t('nav.reports'),
       href: '/reports'
