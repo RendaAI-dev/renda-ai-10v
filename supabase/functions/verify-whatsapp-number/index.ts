@@ -89,15 +89,41 @@ serve(async (req) => {
     const verified = true;
     
     if (verified) {
-      // Update user's WhatsApp settings
-      const { error: updateError } = await supabaseClient
+      // Primeiro, verificar se já existe um registro para este usuário
+      const { data: existingSettings } = await supabaseClient
         .from('poupeja_whatsapp_settings')
-        .upsert({
-          user_id: user.id,
-          whatsapp_number: formattedPhone,
-          whatsapp_verified: true,
-          updated_at: new Date().toISOString()
-        });
+        .select('id')
+        .eq('user_id', user.id)
+        .maybeSingle();
+
+      let updateError;
+
+      if (existingSettings) {
+        // Atualizar registro existente
+        const { error } = await supabaseClient
+          .from('poupeja_whatsapp_settings')
+          .update({
+            whatsapp_number: formattedPhone,
+            whatsapp_verified: true,
+            updated_at: new Date().toISOString()
+          })
+          .eq('user_id', user.id);
+        
+        updateError = error;
+      } else {
+        // Criar novo registro
+        const { error } = await supabaseClient
+          .from('poupeja_whatsapp_settings')
+          .insert({
+            user_id: user.id,
+            whatsapp_number: formattedPhone,
+            whatsapp_verified: true,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+          });
+        
+        updateError = error;
+      }
 
       if (updateError) {
         console.error('Error updating WhatsApp settings:', updateError);

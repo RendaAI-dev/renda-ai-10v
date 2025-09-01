@@ -253,8 +253,42 @@ async function handleMessageUpsert(
   event: EvolutionWebhookEvent
 ): Promise<any> {
   try {
-    const messageData = event.data as MessageUpsert
-    const { key, message, pushName } = messageData.data
+    // Primeiro, vamos verificar a estrutura dos dados
+    console.log('Raw event data:', JSON.stringify(event, null, 2))
+    
+    // Os dados podem estar diretamente em event.data ou aninhados
+    const messageData = event.data || event
+    console.log('Message data structure:', JSON.stringify(messageData, null, 2))
+    
+    // Tentar extrair os dados de forma defensiva
+    let key, message, pushName
+    
+    if (messageData.data && messageData.data.key) {
+      // Estrutura aninhada: event.data.data.key
+      ({ key, message, pushName } = messageData.data)
+    } else if (messageData.key) {
+      // Estrutura direta: event.data.key
+      key = messageData.key
+      message = messageData.message
+      pushName = messageData.pushName
+    } else {
+      console.error('Could not find message key in event data')
+      return {
+        success: false,
+        processed: false,
+        message: 'Invalid message structure - no key found'
+      }
+    }
+
+    // Verificar se key existe
+    if (!key || !key.remoteJid) {
+      console.error('Message key is missing remoteJid')
+      return {
+        success: false,
+        processed: false,
+        message: 'Message key is invalid or missing remoteJid'
+      }
+    }
 
     // Ignorar mensagens enviadas por nós mesmos
     if (key.fromMe) {
