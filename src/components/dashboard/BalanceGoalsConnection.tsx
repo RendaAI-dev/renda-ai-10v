@@ -55,7 +55,7 @@ const BalanceGoalsConnection: React.FC<BalanceGoalsConnectionProps> = ({
                     {t('goals.availableBalance')}
                   </span>
                 </div>
-                <Badge variant="outline" className="border-secondary/30 text-secondary">
+                <Badge variant="outline" className="border-secondary/20 text-secondary-foreground">
                   {t('common.available')}
                 </Badge>
               </div>
