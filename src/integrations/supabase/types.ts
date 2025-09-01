@@ -208,6 +208,95 @@ export type Database = {
         }
         Relationships: []
       }
+      poupeja_message_templates: {
+        Row: {
+          created_at: string
+          id: string
+          is_active: boolean | null
+          is_default: boolean | null
+          message_content: string
+          template_type: string
+          title: string
+          updated_at: string
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_active?: boolean | null
+          is_default?: boolean | null
+          message_content: string
+          template_type: string
+          title: string
+          updated_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_active?: boolean | null
+          is_default?: boolean | null
+          message_content?: string
+          template_type?: string
+          title?: string
+          updated_at?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      poupeja_notification_logs: {
+        Row: {
+          appointment_id: string | null
+          created_at: string
+          delivered_at: string | null
+          error_message: string | null
+          id: string
+          message_content: string | null
+          retry_count: number | null
+          sent_at: string | null
+          status: string
+          updated_at: string
+          user_id: string
+          whatsapp_number: string | null
+        }
+        Insert: {
+          appointment_id?: string | null
+          created_at?: string
+          delivered_at?: string | null
+          error_message?: string | null
+          id?: string
+          message_content?: string | null
+          retry_count?: number | null
+          sent_at?: string | null
+          status?: string
+          updated_at?: string
+          user_id: string
+          whatsapp_number?: string | null
+        }
+        Update: {
+          appointment_id?: string | null
+          created_at?: string
+          delivered_at?: string | null
+          error_message?: string | null
+          id?: string
+          message_content?: string | null
+          retry_count?: number | null
+          sent_at?: string | null
+          status?: string
+          updated_at?: string
+          user_id?: string
+          whatsapp_number?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "poupeja_notification_logs_appointment_id_fkey"
+            columns: ["appointment_id"]
+            isOneToOne: false
+            referencedRelation: "poupeja_appointments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       poupeja_scheduled_transactions: {
         Row: {
           amount: number
@@ -542,6 +631,107 @@ export type Database = {
         }
         Relationships: []
       }
+      poupeja_whatsapp_queue: {
+        Row: {
+          appointment_id: string | null
+          created_at: string
+          error_message: string | null
+          id: string
+          max_retries: number | null
+          message_content: string
+          priority: number | null
+          retry_count: number | null
+          scheduled_for: string
+          status: string
+          updated_at: string
+          user_id: string
+          whatsapp_number: string
+        }
+        Insert: {
+          appointment_id?: string | null
+          created_at?: string
+          error_message?: string | null
+          id?: string
+          max_retries?: number | null
+          message_content: string
+          priority?: number | null
+          retry_count?: number | null
+          scheduled_for: string
+          status?: string
+          updated_at?: string
+          user_id: string
+          whatsapp_number: string
+        }
+        Update: {
+          appointment_id?: string | null
+          created_at?: string
+          error_message?: string | null
+          id?: string
+          max_retries?: number | null
+          message_content?: string
+          priority?: number | null
+          retry_count?: number | null
+          scheduled_for?: string
+          status?: string
+          updated_at?: string
+          user_id?: string
+          whatsapp_number?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "poupeja_whatsapp_queue_appointment_id_fkey"
+            columns: ["appointment_id"]
+            isOneToOne: false
+            referencedRelation: "poupeja_appointments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      poupeja_whatsapp_settings: {
+        Row: {
+          created_at: string
+          default_reminder_times: number[] | null
+          enable_reminders: boolean | null
+          id: string
+          language: string | null
+          quiet_hours_end: string | null
+          quiet_hours_start: string | null
+          timezone: string | null
+          updated_at: string
+          user_id: string
+          whatsapp_number: string | null
+          whatsapp_verified: boolean | null
+        }
+        Insert: {
+          created_at?: string
+          default_reminder_times?: number[] | null
+          enable_reminders?: boolean | null
+          id?: string
+          language?: string | null
+          quiet_hours_end?: string | null
+          quiet_hours_start?: string | null
+          timezone?: string | null
+          updated_at?: string
+          user_id: string
+          whatsapp_number?: string | null
+          whatsapp_verified?: boolean | null
+        }
+        Update: {
+          created_at?: string
+          default_reminder_times?: number[] | null
+          enable_reminders?: boolean | null
+          id?: string
+          language?: string | null
+          quiet_hours_end?: string | null
+          quiet_hours_start?: string | null
+          timezone?: string | null
+          updated_at?: string
+          user_id?: string
+          whatsapp_number?: string | null
+          whatsapp_verified?: boolean | null
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           created_at: string | null
@@ -668,7 +858,11 @@ export type Database = {
         Returns: boolean
       }
       is_admin: {
-        Args: { user_id?: string }
+        Args: { p_user_id?: string }
+        Returns: boolean
+      }
+      is_admin_user: {
+        Args: { p_user_id?: string }
         Returns: boolean
       }
       migrate_existing_auth_users: {

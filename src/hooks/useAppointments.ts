@@ -1,11 +1,17 @@
 import { useState, useEffect } from "react";
 import { appointmentService, Appointment } from "@/services/appointmentService";
 import { useToast } from "@/hooks/use-toast";
+import { useWhatsAppNotifications } from "@/hooks/useWhatsAppNotifications";
 
 export const useAppointments = () => {
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
+  const { 
+    scheduleAppointmentReminders,
+    sendAppointmentConfirmation,
+    sendAppointmentCancellation
+  } = useWhatsAppNotifications();
 
   const fetchAppointments = async () => {
     try {
@@ -31,6 +37,21 @@ export const useAppointments = () => {
     try {
       const newAppointment = await appointmentService.addAppointment(appointment);
       setAppointments(prev => [...prev, newAppointment]);
+      
+      // Schedule WhatsApp reminders for the new appointment
+      await scheduleAppointmentReminders({
+        ...newAppointment,
+        appointment_date: newAppointment.appointmentDate,
+        user_id: newAppointment.userId
+      });
+      
+      // Send confirmation message
+      await sendAppointmentConfirmation({
+        ...newAppointment,
+        appointment_date: newAppointment.appointmentDate,
+        user_id: newAppointment.userId
+      });
+      
       toast({
         title: "Compromisso criado",
         description: "Seu compromisso foi criado com sucesso.",
@@ -67,8 +88,21 @@ export const useAppointments = () => {
 
   const deleteAppointment = async (id: string) => {
     try {
+      // Get appointment details before deletion for cancellation message
+      const appointmentToDelete = appointments.find(apt => apt.id === id);
+      
       await appointmentService.deleteAppointment(id);
       setAppointments(prev => prev.filter(t => t.id !== id));
+      
+      // Send cancellation message if appointment found
+      if (appointmentToDelete) {
+        await sendAppointmentCancellation({
+          ...appointmentToDelete,
+          appointment_date: appointmentToDelete.appointmentDate,
+          user_id: appointmentToDelete.userId
+        });
+      }
+      
       toast({
         title: "Compromisso removido",
         description: "Seu compromisso foi removido com sucesso.",
