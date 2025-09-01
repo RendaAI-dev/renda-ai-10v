@@ -70,10 +70,53 @@ serve(async (req) => {
       formattedPhone = '55' + formattedPhone;
     }
 
-    // In a real implementation, you would integrate with a WhatsApp API service
-    // For now, we'll simulate the sending and log the notification
-    
-    const messageId = crypto.randomUUID();
+    // Get Evolution API configuration
+    const { data: evolutionConfig } = await supabaseClient
+      .from('poupeja_evolution_config')
+      .select('*')
+      .eq('is_active', true)
+      .single();
+
+    if (!evolutionConfig) {
+      throw new Error('Evolution API não configurada');
+    }
+
+    // Prepare message for Evolution API
+    const messagePayload = {
+      number: formattedPhone,
+      textMessage: {
+        text: message
+      }
+    };
+
+    console.log('Sending to Evolution API:', {
+      url: `${evolutionConfig.api_url}/message/sendText/${evolutionConfig.instance_name}`,
+      phone: formattedPhone
+    });
+
+    // Send message through Evolution API
+    const evolutionResponse = await fetch(
+      `${evolutionConfig.api_url}/message/sendText/${evolutionConfig.instance_name}`,
+      {
+        method: 'POST',
+        headers: {
+          'apikey': evolutionConfig.api_key,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(messagePayload),
+      }
+    );
+
+    if (!evolutionResponse.ok) {
+      const errorText = await evolutionResponse.text();
+      console.error('Evolution API error:', evolutionResponse.status, errorText);
+      throw new Error(`Erro na Evolution API: ${evolutionResponse.status} - ${errorText}`);
+    }
+
+    const evolutionResult = await evolutionResponse.json();
+    console.log('Evolution API response:', evolutionResult);
+
+    const messageId = evolutionResult.key?.id || crypto.randomUUID();
     const sentAt = new Date().toISOString();
 
     // Log the notification attempt
@@ -82,42 +125,22 @@ serve(async (req) => {
       .insert({
         user_id: user.id,
         appointment_id: appointmentId,
-        whatsapp_number: formattedPhone,
+        notification_type: 'manual',
+        channel: 'whatsapp',
+        recipient: formattedPhone,
         message_content: message,
-        status: 'sent', // In real implementation, this would be 'pending' initially
+        message_id: messageId,
+        status: 'sent',
         sent_at: sentAt,
+        metadata: {
+          evolution_response: evolutionResult,
+          phone_formatted: formattedPhone
+        }
       });
 
     if (logError) {
       console.error('Error logging notification:', logError);
     }
-
-    // TODO: Replace this simulation with actual WhatsApp API integration
-    // Examples of WhatsApp Business API services:
-    // - Twilio WhatsApp API
-    // - Meta WhatsApp Business API
-    // - Other WhatsApp Business Solution Providers
-    
-    // For now, we simulate a successful send
-    console.log('WhatsApp message simulated:', {
-      to: formattedPhone,
-      message: message.substring(0, 100) + '...',
-      messageId,
-      timestamp: sentAt
-    });
-
-    // Update the log with delivery status (simulated)
-    setTimeout(async () => {
-      await supabaseClient
-        .from('poupeja_notification_logs')
-        .update({
-          status: 'delivered',
-          delivered_at: new Date().toISOString()
-        })
-        .eq('user_id', user.id)
-        .eq('whatsapp_number', formattedPhone)
-        .eq('sent_at', sentAt);
-    }, 1000);
 
     return new Response(
       JSON.stringify({
@@ -125,8 +148,7 @@ serve(async (req) => {
         messageId,
         status: 'sent',
         timestamp: sentAt,
-        // In development, show that this is simulated
-        note: 'This is a simulated WhatsApp send. Integrate with a real WhatsApp API service for production.'
+        evolutionResponse: evolutionResult
       }),
       {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
