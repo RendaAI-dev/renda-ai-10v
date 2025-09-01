@@ -1,10 +1,10 @@
 project_id = "pqhiyqresnjiktkyjshh"
 
 [functions.evolution-activate-instance]
-verify_jwt = true
+verify_jwt = false
 
 [functions.evolution-reconnect]
-verify_jwt = true
+verify_jwt = false
 
 [functions.evolution-webhook]
 verify_jwt = false
