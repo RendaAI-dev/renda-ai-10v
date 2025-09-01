@@ -164,7 +164,7 @@ serve(async (req) => {
     }
 
     const connectData = await connectResponse.json();
-    console.log('Connect response:', connectData);
+    console.log('Connect response:', JSON.stringify(connectData, null, 2));
 
     // Update database with QR code or connection status
     const updateData: any = {
@@ -206,8 +206,43 @@ serve(async (req) => {
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         }
       );
+    } else if (connectData.qrcode) {
+      // Different QR code format
+      updateData.qr_code = connectData.qrcode;
+      updateData.connection_status = 'pending';
+      
+      console.log('QR Code generated (alternative format)');
+      
+      return new Response(
+        JSON.stringify({ 
+          success: true, 
+          qrcode: connectData.qrcode,
+          message: 'QR Code gerado! Escaneie com seu WhatsApp.',
+          qr_url: `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(connectData.qrcode)}`
+        }),
+        {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        }
+      );
+    } else if (connectData.message && connectData.message.includes('QR')) {
+      // Handle message-based QR response
+      updateData.connection_status = 'pending';
+      
+      console.log('QR Code process initiated');
+      
+      return new Response(
+        JSON.stringify({ 
+          success: true, 
+          message: connectData.message || 'Processo de conexão iniciado. Aguarde o QR Code ser gerado.',
+          waiting_qr: true
+        }),
+        {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        }
+      );
     } else {
-      throw new Error('Resposta inesperada da Evolution API');
+      console.error('Unexpected Evolution API response structure:', connectData);
+      throw new Error(`Resposta inesperada da Evolution API: ${JSON.stringify(connectData)}`);
     }
 
     // Update database
