@@ -2,7 +2,6 @@ import { useRef, useEffect } from 'react';
 import { ScheduledTransaction } from '@/types';
 import { Appointment } from '@/services/appointmentService';
 import { notificationService } from '@/services/notificationService';
-import { supabase } from '@/integrations/supabase/client';
 
 interface ReminderEntry {
   transactionId: string;
@@ -93,59 +92,30 @@ export const useReminders = (
   };
 
   const showTransactionReminderNotification = async (transaction: ScheduledTransaction) => {
-    // Get user data for WhatsApp notification
-    const { data: { user } } = await supabase.auth.getUser();
-    let userPhone = '';
-    let userName = '';
-
-    if (user) {
-      const { data: userData } = await supabase
-        .from('poupeja_users')
-        .select('phone, name')
-        .eq('id', user.id)
-        .single();
-      
-      if (userData) {
-        userPhone = userData.phone || '';
-        userName = userData.name || user.email?.split('@')[0] || '';
-      }
-    }
-
-    await notificationService.showTransactionReminderNotification(
+    await notificationService.showReminderNotification(
       transaction.type,
       transaction.amount,
       transaction.description || `${transaction.category} - ${transaction.type === 'income' ? 'Receita' : 'Despesa'}`,
-      0, // Show now
-      userPhone,
-      userName
+      0 // Show now
     );
   };
 
   const showAppointmentReminderNotification = async (appointment: Appointment, minutesUntil: number) => {
-    // Get user data for WhatsApp notification
-    const { data: { user } } = await supabase.auth.getUser();
-    let userPhone = '';
-    let userName = '';
+    const formatTimeUntil = (minutes: number): string => {
+      if (minutes <= 0) return 'agora';
+      if (minutes < 60) return `em ${minutes} minutos`;
+      if (minutes < 1440) return `em ${Math.round(minutes / 60)} horas`;
+      return `em ${Math.round(minutes / 1440)} dias`;
+    };
 
-    if (user) {
-      const { data: userData } = await supabase
-        .from('poupeja_users')
-        .select('phone, name')
-        .eq('id', user.id)
-        .single();
-      
-      if (userData) {
-        userPhone = userData.phone || '';
-        userName = userData.name || user.email?.split('@')[0] || '';
-      }
-    }
+    const title = `📅 Lembrete: ${appointment.title} ${formatTimeUntil(minutesUntil)}`;
+    const body = `${appointment.description || ''} ${appointment.location ? `- ${appointment.location}` : ''}`.trim();
 
-    await notificationService.showAppointmentReminderNotification(
-      appointment, 
-      minutesUntil, 
-      userPhone, 
-      userName
-    );
+    await notificationService.showNotification(title, {
+      body,
+      tag: `appointment-${appointment.id}-${Date.now()}`,
+      requireInteraction: true,
+    });
   };
 
   const markReminderAsSent = (transactionId: string) => {

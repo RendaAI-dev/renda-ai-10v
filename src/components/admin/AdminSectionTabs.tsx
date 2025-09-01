@@ -1,20 +1,18 @@
 
 import React from 'react';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
-import { Palette, CreditCard, DollarSign, Phone, Database, Code, MessageSquare, Zap } from 'lucide-react';
+import { Palette, CreditCard, DollarSign, Phone, Database, Code } from 'lucide-react';
 import BrandingConfigManager from './BrandingConfigManager';
 import StripeConfigManager from './StripeConfigManager';
 import PlanPricingManager from './PlanPricingManager';
 import ContactConfigManager from './ContactConfigManager';
 import SystemConfigManager from './SystemConfigManager';
 import { PWAManifestGenerator } from './PWAManifestGenerator';
-import WhatsAppConfigManager from './WhatsAppConfigManager';
-import N8NIntegrationManager from './N8NIntegrationManager';
 
 const AdminSectionTabs: React.FC = () => {
   return (
     <Tabs defaultValue="system" className="w-full">
-      <TabsList className="grid w-full grid-cols-8">
+      <TabsList className="grid w-full grid-cols-6">
         <TabsTrigger value="system" className="flex items-center gap-2">
           <Database className="h-4 w-4" />
           Sistema
@@ -34,14 +32,6 @@ const AdminSectionTabs: React.FC = () => {
         <TabsTrigger value="contact" className="flex items-center gap-2">
           <Phone className="h-4 w-4" />
           Contato
-        </TabsTrigger>
-        <TabsTrigger value="whatsapp" className="flex items-center gap-2">
-          <MessageSquare className="h-4 w-4" />
-          WhatsApp
-        </TabsTrigger>
-        <TabsTrigger value="n8n" className="flex items-center gap-2">
-          <Zap className="h-4 w-4" />
-          N8N
         </TabsTrigger>
         <TabsTrigger value="pwa" className="flex items-center gap-2">
           <Code className="h-4 w-4" />
@@ -67,14 +57,6 @@ const AdminSectionTabs: React.FC = () => {
 
       <TabsContent value="contact" className="mt-6">
         <ContactConfigManager />
-      </TabsContent>
-
-      <TabsContent value="whatsapp" className="mt-6">
-        <WhatsAppConfigManager />
-      </TabsContent>
-
-      <TabsContent value="n8n" className="mt-6">
-        <N8NIntegrationManager />
       </TabsContent>
 
       <TabsContent value="pwa" className="mt-6">

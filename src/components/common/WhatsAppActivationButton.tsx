@@ -43,10 +43,10 @@ const WhatsAppActivationButton: React.FC = () => {
 
   return (
     <>
-      {/* Botão flutuante - ajustado para mobile */}
+      {/* Botão flutuante - movido mais para cima */}
       <button 
         onClick={() => setIsOpen(true)} 
-        className="fixed bottom-32 md:bottom-24 right-6 bg-green-500 hover:bg-green-600 text-white p-4 rounded-full shadow-lg transition-all duration-300 hover:scale-110 z-50 group" 
+        className="fixed bottom-24 right-6 bg-green-500 hover:bg-green-600 text-white p-4 rounded-full shadow-lg transition-all duration-300 hover:scale-110 z-50 group" 
         aria-label="Ativar conta WhatsApp"
       >
         <MessageCircle className="h-6 w-6" />

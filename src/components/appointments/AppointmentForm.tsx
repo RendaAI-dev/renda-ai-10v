@@ -47,20 +47,12 @@ export const AppointmentForm: React.FC<AppointmentFormProps> = ({
     appointment?.reminderEnabled || false
   );
 
-  // Helper function to convert UTC to Brazilian time for display
-  const convertUTCToBrazilTime = (utcDate: string) => {
-    const date = new Date(utcDate);
-    // Brazil is UTC-3, so we subtract 3 hours from UTC
-    const brazilTime = new Date(date.getTime() - 3 * 60 * 60 * 1000);
-    return format(brazilTime, "yyyy-MM-dd'T'HH:mm");
-  };
-
   const { register, handleSubmit, formState: { errors }, setValue, watch } = useForm({
     defaultValues: {
       title: appointment?.title || "",
       description: appointment?.description || "",
       appointmentDate: appointment?.appointmentDate 
-        ? convertUTCToBrazilTime(appointment.appointmentDate)
+        ? format(new Date(appointment.appointmentDate), "yyyy-MM-dd'T'HH:mm")
         : "",
       category: appointment?.category || "meeting",
       location: appointment?.location || "",
@@ -80,15 +72,10 @@ export const AppointmentForm: React.FC<AppointmentFormProps> = ({
   };
 
   const handleFormSubmit = (data: any) => {
-    // Convert datetime-local (Brazil time) to UTC for storage
-    const localDateTime = new Date(data.appointmentDate + ':00'); // Add seconds
-    // Brazil is UTC-3, so we add 3 hours to convert to UTC
-    const utcDateTime = new Date(localDateTime.getTime() + 3 * 60 * 60 * 1000);
-    
     const appointmentData: Omit<Appointment, 'id' | 'userId' | 'createdAt' | 'updatedAt'> = {
       title: data.title,
       description: data.description,
-      appointmentDate: utcDateTime.toISOString(),
+      appointmentDate: data.appointmentDate,
       category: data.category,
       location: data.location,
       recurrence: data.recurrence as 'once' | 'daily' | 'weekly' | 'monthly' | 'yearly',

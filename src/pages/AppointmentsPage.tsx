@@ -168,12 +168,7 @@ export const AppointmentsPage: React.FC = () => {
                         <div className="flex items-center gap-4 text-sm text-muted-foreground">
                           <span className="flex items-center gap-1">
                             <Clock className="h-3 w-3" />
-                            {(() => {
-                              // Convert UTC to Brazil time for display
-                              const utcDate = new Date(appointment.appointmentDate);
-                              const brazilTime = new Date(utcDate.getTime() - 3 * 60 * 60 * 1000);
-                              return format(brazilTime, "dd 'de' MMMM 'às' HH:mm", { locale: ptBR });
-                            })()}
+                            {format(new Date(appointment.appointmentDate), "dd 'de' MMMM 'às' HH:mm", { locale: ptBR })}
                           </span>
                           {appointment.location && (
                             <span className="flex items-center gap-1">
@@ -236,12 +231,7 @@ export const AppointmentsPage: React.FC = () => {
                         <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
                           <span className="flex items-center gap-1">
                             <Clock className="h-3 w-3" />
-                            {(() => {
-                              // Convert UTC to Brazil time for display
-                              const utcDate = new Date(appointment.appointmentDate);
-                              const brazilTime = new Date(utcDate.getTime() - 3 * 60 * 60 * 1000);
-                              return format(brazilTime, "dd/MM/yyyy 'às' HH:mm");
-                            })()}
+                            {format(new Date(appointment.appointmentDate), "dd/MM/yyyy 'às' HH:mm")}
                           </span>
                           {appointment.location && (
                             <span className="flex items-center gap-1">
