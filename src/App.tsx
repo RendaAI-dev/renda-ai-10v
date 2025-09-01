@@ -24,6 +24,10 @@ import SettingsPage from "./pages/SettingsPage";
 import ProfilePage from "./pages/ProfilePage";
 import PlansPage from "./pages/PlansPage";
 import AdminDashboard from "./pages/AdminDashboard";
+import LandingPage from "./pages/LandingPage";
+import CheckoutPage from "./pages/CheckoutPage";
+import PaymentSuccessPage from "./pages/PaymentSuccessPage";
+import ThankYouPage from "./pages/ThankYouPage";
 
 const queryClient = new QueryClient();
 
@@ -52,6 +56,11 @@ function App() {
                          <Route path="/profile" element={<ProfilePage />} />
                          <Route path="/plans" element={<PlansPage />} />
                          <Route path="/admin" element={<AdminDashboard />} />
+                         <Route path="/landing" element={<LandingPage />} />
+                         <Route path="/vendas" element={<LandingPage />} />
+                         <Route path="/checkout" element={<CheckoutPage />} />
+                         <Route path="/payment-success" element={<PaymentSuccessPage />} />
+                         <Route path="/thank-you" element={<ThankYouPage />} />
                         <Route path="*" element={<div className="text-center p-8">Página não encontrada</div>} />
                       </Routes>
                     </BrowserRouter>
