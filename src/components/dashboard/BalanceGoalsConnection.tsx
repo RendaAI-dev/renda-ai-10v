@@ -47,37 +47,37 @@ const BalanceGoalsConnection: React.FC<BalanceGoalsConnectionProps> = ({
           {/* Breakdown do Saldo */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {/* Saldo Disponível */}
-            <div className="p-4 rounded-lg bg-green-50 dark:bg-green-950/20 border border-green-200 dark:border-green-800">
+            <div className="p-4 rounded-lg bg-secondary/10 border border-secondary/20">
               <div className="flex items-center justify-between mb-2">
                 <div className="flex items-center gap-2">
-                  <Wallet className="h-4 w-4 text-green-600 dark:text-green-400" />
-                  <span className="text-sm font-medium text-green-700 dark:text-green-300">
+                  <Wallet className="h-4 w-4 text-secondary" />
+                  <span className="text-sm font-medium text-secondary">
                     {t('goals.availableBalance')}
                   </span>
                 </div>
-                <Badge variant="outline" className="border-green-300 text-green-700 dark:text-green-300">
+                <Badge variant="outline" className="border-secondary/30 text-secondary">
                   {t('common.available')}
                 </Badge>
               </div>
-              <p className="text-xl font-bold text-green-700 dark:text-green-400">
+              <p className="text-xl font-bold text-secondary">
                 {hideValues ? renderHiddenValue() : formatCurrency(balanceGoalsData.availableBalance, currency)}
               </p>
             </div>
 
             {/* Saldo Comprometido com Metas */}
-            <div className="p-4 rounded-lg bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800">
+            <div className="p-4 rounded-lg bg-primary/10 border border-primary/20">
               <div className="flex items-center justify-between mb-2">
                 <div className="flex items-center gap-2">
-                  <TrendingUp className="h-4 w-4 text-blue-600 dark:text-blue-400" />
-                  <span className="text-sm font-medium text-blue-700 dark:text-blue-300">
+                  <TrendingUp className="h-4 w-4 text-primary" />
+                  <span className="text-sm font-medium text-primary">
                     {t('goals.committedBalance')}
                   </span>
                 </div>
-                <Badge variant="outline" className="border-blue-300 text-blue-700 dark:text-blue-300">
+                <Badge variant="outline" className="border-primary/30 text-primary">
                   {t('goals.committed')}
                 </Badge>
               </div>
-              <p className="text-xl font-bold text-blue-700 dark:text-blue-400">
+              <p className="text-xl font-bold text-primary">
                 {hideValues ? renderHiddenValue() : formatCurrency(balanceGoalsData.committedBalance, currency)}
               </p>
             </div>
