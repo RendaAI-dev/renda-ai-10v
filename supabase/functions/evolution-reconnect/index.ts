@@ -160,11 +160,26 @@ serve(async (req) => {
     });
 
     if (!connectResponse.ok) {
-      throw new Error(`Erro ao gerar QR Code: ${connectResponse.status}`);
+      const errorText = await connectResponse.text();
+      console.error('Evolution API error response:', connectResponse.status, errorText);
+      throw new Error(`Erro ao gerar QR Code: ${connectResponse.status} - ${errorText}`);
     }
 
-    const connectData = await connectResponse.json();
-    console.log('Connect response:', JSON.stringify(connectData, null, 2));
+    let connectData;
+    try {
+      const responseText = await connectResponse.text();
+      console.log('Raw Evolution API response:', responseText);
+      
+      if (!responseText) {
+        throw new Error('Evolution API retornou resposta vazia');
+      }
+      
+      connectData = JSON.parse(responseText);
+      console.log('Parsed connect response:', JSON.stringify(connectData, null, 2));
+    } catch (jsonError) {
+      console.error('Failed to parse Evolution API response as JSON:', jsonError);
+      throw new Error('Evolution API retornou resposta inválida (não é JSON válido)');
+    }
 
     // Update database with QR code or connection status
     const updateData: any = {
