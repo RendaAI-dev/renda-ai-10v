@@ -247,45 +247,57 @@ export type Database = {
       poupeja_notification_logs: {
         Row: {
           appointment_id: string | null
+          channel: string
           created_at: string
           delivered_at: string | null
           error_message: string | null
           id: string
           message_content: string | null
-          retry_count: number | null
+          message_id: string | null
+          metadata: Json | null
+          notification_type: string
+          read_at: string | null
+          recipient: string
+          reminder_time_minutes: number | null
           sent_at: string | null
           status: string
-          updated_at: string
           user_id: string
-          whatsapp_number: string | null
         }
         Insert: {
           appointment_id?: string | null
+          channel?: string
           created_at?: string
           delivered_at?: string | null
           error_message?: string | null
           id?: string
           message_content?: string | null
-          retry_count?: number | null
+          message_id?: string | null
+          metadata?: Json | null
+          notification_type: string
+          read_at?: string | null
+          recipient: string
+          reminder_time_minutes?: number | null
           sent_at?: string | null
-          status?: string
-          updated_at?: string
+          status: string
           user_id: string
-          whatsapp_number?: string | null
         }
         Update: {
           appointment_id?: string | null
+          channel?: string
           created_at?: string
           delivered_at?: string | null
           error_message?: string | null
           id?: string
           message_content?: string | null
-          retry_count?: number | null
+          message_id?: string | null
+          metadata?: Json | null
+          notification_type?: string
+          read_at?: string | null
+          recipient?: string
+          reminder_time_minutes?: number | null
           sent_at?: string | null
           status?: string
-          updated_at?: string
           user_id?: string
-          whatsapp_number?: string | null
         }
         Relationships: [
           {
