@@ -47,12 +47,11 @@ export const AppointmentForm: React.FC<AppointmentFormProps> = ({
     appointment?.reminderEnabled || false
   );
 
-  // Helper function to convert UTC to Brazil time for display
-  const convertUTCToBrazilTime = (utcDate: string) => {
+  // Helper function to format UTC date for datetime-local input
+  const formatDateForInput = (utcDate: string) => {
     const date = new Date(utcDate);
-    // Brazil is UTC-3, so we subtract 3 hours from UTC for display
-    const brazilTime = new Date(date.getTime() - 3 * 60 * 60 * 1000);
-    return format(brazilTime, "yyyy-MM-dd'T'HH:mm");
+    // date-fns format to datetime-local format (browser automatically converts UTC to local)
+    return format(date, "yyyy-MM-dd'T'HH:mm");
   };
 
   const { register, handleSubmit, formState: { errors }, setValue, watch } = useForm({
@@ -60,7 +59,7 @@ export const AppointmentForm: React.FC<AppointmentFormProps> = ({
       title: appointment?.title || "",
       description: appointment?.description || "",
       appointmentDate: appointment?.appointmentDate 
-        ? convertUTCToBrazilTime(appointment.appointmentDate)
+        ? formatDateForInput(appointment.appointmentDate)
         : "",
       category: appointment?.category || "meeting",
       location: appointment?.location || "",
