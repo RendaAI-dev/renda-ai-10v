@@ -9,7 +9,7 @@ import MainLayout from "@/components/layout/MainLayout";
 import SubscriptionGuard from "@/components/subscription/SubscriptionGuard";
 import { useAppointments } from "@/hooks/useAppointments";
 import { AppointmentForm } from "@/components/appointments/AppointmentForm";
-import { Appointment } from "@/services/appointmentService";
+import { Appointment } from "@/services/appointmentsService";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 
@@ -44,7 +44,7 @@ export const AppointmentsPage: React.FC = () => {
     markAsCompleted,
   } = useAppointments();
 
-  const handleSubmit = async (appointmentData: Omit<Appointment, 'id' | 'userId' | 'createdAt' | 'updatedAt'>) => {
+  const handleSubmit = async (appointmentData: Omit<Appointment, 'id' | 'user_id' | 'created_at' | 'updated_at'>) => {
     try {
       if (editingAppointment) {
         await updateAppointment({ ...editingAppointment, ...appointmentData });
@@ -82,11 +82,11 @@ export const AppointmentsPage: React.FC = () => {
 
   const upcomingAppointments = filteredAppointments
     .filter(appointment => {
-      const appointmentDate = new Date(appointment.appointmentDate);
+      const appointmentDate = new Date(appointment.appointment_date);
       const now = new Date();
       return appointmentDate >= now && appointment.status === 'pending';
     })
-    .sort((a, b) => new Date(a.appointmentDate).getTime() - new Date(b.appointmentDate).getTime());
+    .sort((a, b) => new Date(a.appointment_date).getTime() - new Date(b.appointment_date).getTime());
 
   if (loading) {
     return (
@@ -168,7 +168,7 @@ export const AppointmentsPage: React.FC = () => {
                         <div className="flex items-center gap-4 text-sm text-muted-foreground">
                           <span className="flex items-center gap-1">
                             <Clock className="h-3 w-3" />
-                            {format(new Date(appointment.appointmentDate), "dd 'de' MMMM 'às' HH:mm", { locale: ptBR })}
+                            {format(new Date(appointment.appointment_date), "dd 'de' MMMM 'às' HH:mm", { locale: ptBR })}
                           </span>
                           {appointment.location && (
                             <span className="flex items-center gap-1">
@@ -181,7 +181,7 @@ export const AppointmentsPage: React.FC = () => {
                       <Button
                         variant="ghost"
                         size="sm"
-                        onClick={() => markAsCompleted(appointment.id)}
+                        onClick={() => appointment.id && markAsCompleted(appointment.id)}
                         className="text-green-600 hover:text-green-700"
                       >
                         <CheckCircle className="h-4 w-4" />
@@ -231,7 +231,7 @@ export const AppointmentsPage: React.FC = () => {
                         <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
                           <span className="flex items-center gap-1">
                             <Clock className="h-3 w-3" />
-                            {format(new Date(appointment.appointmentDate), "dd/MM/yyyy 'às' HH:mm")}
+                            {format(new Date(appointment.appointment_date), "dd/MM/yyyy 'às' HH:mm")}
                           </span>
                           {appointment.location && (
                             <span className="flex items-center gap-1">
@@ -239,7 +239,7 @@ export const AppointmentsPage: React.FC = () => {
                               {appointment.location}
                             </span>
                           )}
-                          {appointment.reminderEnabled && (
+                          {appointment.reminder_enabled && (
                             <span className="flex items-center gap-1 text-primary">
                               🔔 Lembrete ativo
                             </span>
@@ -248,11 +248,11 @@ export const AppointmentsPage: React.FC = () => {
                       </div>
                       
                       <div className="flex gap-2 ml-4">
-                        {appointment.status === 'pending' && (
+                         {appointment.status === 'pending' && (
                           <Button
                             variant="ghost"
                             size="sm"
-                            onClick={() => markAsCompleted(appointment.id)}
+                            onClick={() => appointment.id && markAsCompleted(appointment.id)}
                             className="text-green-600 hover:text-green-700"
                           >
                             <CheckCircle className="h-4 w-4" />
@@ -265,10 +265,10 @@ export const AppointmentsPage: React.FC = () => {
                         >
                           Editar
                         </Button>
-                        <Button
+                         <Button
                           variant="ghost"
                           size="sm"
-                          onClick={() => handleDelete(appointment.id)}
+                          onClick={() => appointment.id && handleDelete(appointment.id)}
                           className="text-destructive hover:text-destructive"
                         >
                           Excluir

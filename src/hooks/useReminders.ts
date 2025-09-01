@@ -1,6 +1,6 @@
 import { useRef, useEffect } from 'react';
 import { ScheduledTransaction } from '@/types';
-import { Appointment } from '@/services/appointmentService';
+import { Appointment } from '@/services/appointmentsService';
 import { notificationService } from '@/services/notificationService';
 
 interface ReminderEntry {

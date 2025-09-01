@@ -9,12 +9,12 @@ import { Switch } from "@/components/ui/switch";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Calendar, Clock, MapPin, Bell } from "lucide-react";
-import { Appointment } from "@/services/appointmentService";
+import { Appointment } from "@/services/appointmentsService";
 import { format } from "date-fns";
 
 interface AppointmentFormProps {
   appointment?: Appointment;
-  onSubmit: (appointment: Omit<Appointment, 'id' | 'userId' | 'createdAt' | 'updatedAt'>) => void;
+  onSubmit: (appointment: Omit<Appointment, 'id' | 'user_id' | 'created_at' | 'updated_at'>) => void;
   onCancel: () => void;
 }
 
@@ -41,18 +41,18 @@ export const AppointmentForm: React.FC<AppointmentFormProps> = ({
   onCancel
 }) => {
   const [selectedReminderTimes, setSelectedReminderTimes] = useState<number[]>(
-    appointment?.reminderTimes || []
+    appointment?.reminder_times || []
   );
   const [reminderEnabled, setReminderEnabled] = useState(
-    appointment?.reminderEnabled || false
+    appointment?.reminder_enabled || false
   );
 
   const { register, handleSubmit, formState: { errors }, setValue, watch } = useForm({
     defaultValues: {
       title: appointment?.title || "",
       description: appointment?.description || "",
-      appointmentDate: appointment?.appointmentDate 
-        ? format(new Date(appointment.appointmentDate), "yyyy-MM-dd'T'HH:mm")
+      appointmentDate: appointment?.appointment_date 
+        ? format(new Date(appointment.appointment_date), "yyyy-MM-dd'T'HH:mm")
         : "",
       category: appointment?.category || "meeting",
       location: appointment?.location || "",
@@ -72,17 +72,17 @@ export const AppointmentForm: React.FC<AppointmentFormProps> = ({
   };
 
   const handleFormSubmit = (data: any) => {
-    const appointmentData: Omit<Appointment, 'id' | 'userId' | 'createdAt' | 'updatedAt'> = {
+    const appointmentData: Omit<Appointment, 'id' | 'user_id' | 'created_at' | 'updated_at'> = {
       title: data.title,
       description: data.description,
-      appointmentDate: data.appointmentDate,
+      appointment_date: data.appointmentDate,
       category: data.category,
       location: data.location,
       recurrence: data.recurrence as 'once' | 'daily' | 'weekly' | 'monthly' | 'yearly',
       status: data.status as 'pending' | 'completed' | 'cancelled',
-      reminderEnabled,
-      reminderTimes: reminderEnabled ? selectedReminderTimes : [],
-      reminderSent: false
+      reminder_enabled: reminderEnabled,
+      reminder_times: reminderEnabled ? selectedReminderTimes : [],
+      reminder_sent: false
     };
 
     onSubmit(appointmentData);
