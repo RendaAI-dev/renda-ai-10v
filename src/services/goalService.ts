@@ -2,6 +2,8 @@
 import { supabase } from "@/integrations/supabase/client";
 import { Goal, Transaction } from "@/types";
 import { v4 as uuidv4 } from "uuid";
+import { n8nIntegrationService } from "./n8nIntegrationService";
+import { getCurrentUser } from "./userService";
 
 export const getGoals = async (): Promise<Goal[]> => {
   try {

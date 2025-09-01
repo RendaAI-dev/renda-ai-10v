@@ -1,4 +1,6 @@
 import { supabase } from "@/integrations/supabase/client";
+import { n8nIntegrationService } from "./n8nIntegrationService";
+import { getCurrentUser } from "./userService";
 
 export interface Appointment {
   id: string;
@@ -76,7 +78,7 @@ export const appointmentService = {
 
       if (error) throw error;
 
-      return {
+      const newAppointment = {
         id: data.id,
         title: data.title,
         description: data.description,
@@ -92,6 +94,32 @@ export const appointmentService = {
         createdAt: data.created_at,
         updatedAt: data.updated_at,
       };
+
+      // Trigger N8N integration asynchronously (don't block appointment creation)
+      try {
+        const currentUser = await getCurrentUser();
+        if (currentUser && currentUser.phone) {
+          console.log('Triggering N8N automation for appointment creation:', newAppointment.id);
+          await n8nIntegrationService.onAppointmentCreated({
+            id: data.id,
+            title: data.title,
+            description: data.description,
+            appointment_date: data.appointment_date,
+            category: data.category,
+            status: data.status,
+            reminder_enabled: data.reminder_enabled,
+            reminder_times: data.reminder_times
+          }, currentUser);
+          console.log('N8N automation triggered successfully for appointment:', newAppointment.id);
+        } else {
+          console.warn('N8N automation skipped - user not found or missing phone number');
+        }
+      } catch (n8nError) {
+        // Log error but don't throw - N8N failures shouldn't break appointment creation
+        console.error('N8N automation failed for appointment creation:', n8nError);
+      }
+
+      return newAppointment;
     } catch (error) {
       console.error("Error adding appointment:", error);
       throw error;

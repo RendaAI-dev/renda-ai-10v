@@ -2,6 +2,8 @@
 import { supabase } from "@/integrations/supabase/client";
 import { ScheduledTransaction } from "@/types";
 import { v4 as uuidv4 } from "uuid";
+import { n8nIntegrationService } from "./n8nIntegrationService";
+import { getCurrentUser } from "./userService";
 
 export const getScheduledTransactions = async (): Promise<ScheduledTransaction[]> => {
   try {
@@ -323,6 +325,89 @@ export const deleteScheduledTransaction = async (id: string): Promise<boolean> =
     return true;
   } catch (error) {
     console.error("Error deleting scheduled transaction:", error);
+    return false;
+  }
+};
+
+// New function to check and notify about overdue transactions
+export const checkAndNotifyOverdueTransactions = async (): Promise<boolean> => {
+  try {
+    const { data: authData } = await supabase.auth.getUser();
+    if (!authData?.user) {
+      console.log("User not authenticated for overdue check");
+      return false;
+    }
+
+    const today = new Date();
+    today.setHours(0, 0, 0, 0); // Start of today
+    
+    // Get transactions that are overdue (scheduled_date < today and status = pending)
+    const { data: overdueTransactions, error } = await supabase
+      .from("poupeja_scheduled_transactions")
+      .select("*")
+      .eq("user_id", authData.user.id)
+      .eq("status", "pending")
+      .lt("scheduled_date", today.toISOString())
+      .eq("reminder_sent", false); // Only notify once per overdue transaction
+
+    if (error) {
+      console.error("Error fetching overdue transactions:", error);
+      return false;
+    }
+
+    if (!overdueTransactions || overdueTransactions.length === 0) {
+      console.log("No overdue transactions found");
+      return true;
+    }
+
+    console.log(`Found ${overdueTransactions.length} overdue transactions`);
+
+    const currentUser = await getCurrentUser();
+    if (!currentUser || !currentUser.phone) {
+      console.warn("N8N overdue notifications skipped - user not found or missing phone number");
+      return true;
+    }
+
+    // Trigger N8N automation for each overdue transaction
+    for (const transaction of overdueTransactions) {
+      try {
+        console.log('Triggering N8N automation for overdue transaction:', transaction.id);
+        
+        const success = await n8nIntegrationService.onTransactionDue({
+          id: transaction.id,
+          description: transaction.description,
+          amount: transaction.amount,
+          scheduled_date: transaction.scheduled_date,
+          status: 'overdue',
+          reminder_enabled: transaction.reminder_enabled,
+          reminder_time: transaction.reminder_time
+        }, {
+          id: currentUser.id,
+          name: currentUser.name,
+          email: currentUser.email,
+          phone: currentUser.phone
+        });
+
+        if (success) {
+          // Mark as reminder sent to avoid duplicate notifications
+          await supabase
+            .from("poupeja_scheduled_transactions")
+            .update({ 
+              reminder_sent: true,
+              status: 'overdue'
+            })
+            .eq("id", transaction.id);
+          
+          console.log('N8N overdue transaction automation triggered successfully for:', transaction.id);
+        }
+      } catch (n8nError) {
+        console.error('N8N overdue transaction automation failed for:', transaction.id, n8nError);
+      }
+    }
+
+    return true;
+  } catch (error) {
+    console.error("Error in checkAndNotifyOverdueTransactions:", error);
     return false;
   }
 };
