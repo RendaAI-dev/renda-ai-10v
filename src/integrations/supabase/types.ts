@@ -170,6 +170,9 @@ export type Database = {
           paid_amount: number | null
           paid_date: string | null
           recurrence: string | null
+          reminder_enabled: boolean | null
+          reminder_sent: boolean | null
+          reminder_time: number | null
           scheduled_date: string
           status: string | null
           type: string
@@ -188,6 +191,9 @@ export type Database = {
           paid_amount?: number | null
           paid_date?: string | null
           recurrence?: string | null
+          reminder_enabled?: boolean | null
+          reminder_sent?: boolean | null
+          reminder_time?: number | null
           scheduled_date: string
           status?: string | null
           type: string
@@ -206,6 +212,9 @@ export type Database = {
           paid_amount?: number | null
           paid_date?: string | null
           recurrence?: string | null
+          reminder_enabled?: boolean | null
+          reminder_sent?: boolean | null
+          reminder_time?: number | null
           scheduled_date?: string
           status?: string | null
           type?: string
