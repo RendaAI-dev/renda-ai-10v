@@ -23,7 +23,7 @@ import ExpensesPage from "./pages/ExpensesPage";
 import BudgetsPage from "./pages/BudgetsPage";
 import GoalsPage from "./pages/GoalsPage";
 import ReportsPage from "./pages/ReportsPage";
-import { AppointmentsPage } from "./pages/AppointmentsPage";
+import { AppointmentsPageSimple } from "./pages/AppointmentsPageSimple";
 import SchedulePage from "./pages/SchedulePage";
 import SettingsPage from "./pages/SettingsPage";
 import CategoriesPage from "./pages/CategoriesPage";
@@ -66,7 +66,7 @@ function App() {
                         <Route path="/goals" element={<GoalsPage />} />
                         <Route path="/reports" element={<ReportsPage />} />
         <Route path="/schedule" element={<SchedulePage />} />
-        <Route path="/appointments" element={<AppointmentsPage />} />
+        <Route path="/appointments" element={<AppointmentsPageSimple />} />
                         <Route path="/settings" element={<SettingsPage />} />
                         <Route path="/categories" element={<CategoriesPage />} />
                         <Route path="/plans" element={<PlansPage />} />
