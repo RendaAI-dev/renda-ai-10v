@@ -43,7 +43,7 @@ function App() {
                   <AppProvider>
                     <BrowserRouter>
                       <Routes>
-                        <Route path="/" element={<Index />} />
+                        <Route path="/" element={<LandingPage />} />
                         <Route path="/dashboard" element={<Index />} />
                         <Route path="/transactions" element={<TransactionsPage />} />
                         <Route path="/categories" element={<CategoriesPage />} />
