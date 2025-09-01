@@ -8,7 +8,8 @@ export const generateReportData = (
   transactions: Transaction[],
   reportType: string,
   startDate: Date | undefined,
-  endDate: Date | undefined
+  endDate: Date | undefined,
+  selectedCategories?: string[]
 ): Transaction[] => {
   // Filter transactions by date range
   let filteredTransactions = transactions;
@@ -25,6 +26,13 @@ export const generateReportData = (
     filteredTransactions = filteredTransactions.filter(t => t.type === 'income');
   } else if (reportType === 'expenses') {
     filteredTransactions = filteredTransactions.filter(t => t.type === 'expense');
+  }
+  
+  // Filter by selected categories
+  if (selectedCategories && selectedCategories.length > 0) {
+    filteredTransactions = filteredTransactions.filter(transaction => 
+      selectedCategories.includes(transaction.category_id || '')
+    );
   }
   
   return filteredTransactions;

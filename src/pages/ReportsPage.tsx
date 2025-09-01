@@ -21,10 +21,11 @@ const ReportsPage = () => {
     new Date(new Date().setDate(new Date().getDate() - 30))
   );
   const [endDate, setEndDate] = useState<Date | undefined>(new Date());
+  const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
 
   const handleDownload = (format: ReportFormat) => {
     // Generate the report data
-    const reportData = generateReportData(transactions, reportType, startDate, endDate);
+    const reportData = generateReportData(transactions, reportType, startDate, endDate, selectedCategories);
     
     if (format === 'csv') {
       downloadCSV(reportData);
@@ -34,7 +35,7 @@ const ReportsPage = () => {
   };
   
   // Generate filtered transactions for display
-  const filteredTransactions = generateReportData(transactions, reportType, startDate, endDate);
+  const filteredTransactions = generateReportData(transactions, reportType, startDate, endDate, selectedCategories);
   
   // Calculate summary statistics
   const totalIncome = calculateTotalIncome(filteredTransactions);
@@ -54,6 +55,8 @@ const ReportsPage = () => {
             setStartDate={setStartDate}
             endDate={endDate}
             setEndDate={setEndDate}
+            selectedCategories={selectedCategories}
+            setSelectedCategories={setSelectedCategories}
             onDownload={handleDownload}
           />
           
