@@ -48,31 +48,57 @@ class N8NIntegrationService {
     try {
       console.log('=== N8N DEBUG: Initializing n8n service ===');
       
+      // Try different approaches to get the settings
+      console.log('=== N8N DEBUG: Attempting to fetch n8n settings ===');
+      
       const { data: settings, error } = await supabase
         .from('poupeja_settings')
-        .select('key, value')
-        .eq('category', 'integrations')
-        .in('key', ['n8n_webhook_url', 'n8n_enabled', 'n8n_api_key', 'n8n_instance_name']);
+        .select('key, value, category')
+        .eq('category', 'integrations');
 
       console.log('=== N8N DEBUG: Settings query result:', { settings, error });
 
       if (error) {
         console.error('=== N8N DEBUG: Error fetching settings:', error);
+        
+        // Try without RLS as a fallback for debugging
+        console.log('=== N8N DEBUG: Attempting service role query ===');
+        const { data: adminSettings, error: adminError } = await supabase
+          .rpc('get_setting', { p_category: 'integrations', p_key: 'n8n_webhook_url' });
+        
+        console.log('=== N8N DEBUG: Admin query result:', { adminSettings, adminError });
+        
         throw error;
       }
 
-      if (settings) {
+      if (settings && settings.length > 0) {
+        console.log('=== N8N DEBUG: Processing settings:', settings);
+        
         this.config = settings.reduce((acc, setting) => {
+          console.log(`=== N8N DEBUG: Adding ${setting.key} = ${setting.value}`);
           acc[setting.key] = setting.value;
           return acc;
         }, {} as Record<string, string>);
+      } else {
+        console.log('=== N8N DEBUG: No settings found, checking with direct query ===');
+        
+        // Direct query to test
+        const { data: directSettings, error: directError } = await supabase
+          .from('poupeja_settings')
+          .select('*')
+          .ilike('key', '%n8n%');
+          
+        console.log('=== N8N DEBUG: Direct n8n query:', { directSettings, directError });
+        
+        this.config = {};
       }
 
       console.log('=== N8N DEBUG: Final config:', this.config);
       this.isInitialized = true;
     } catch (error) {
       console.error('=== N8N DEBUG: Failed to initialize N8N integration:', error);
-      throw error;
+      this.config = {};
+      this.isInitialized = true; // Continue even if initialization fails
     }
   }
 
