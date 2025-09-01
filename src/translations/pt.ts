@@ -226,6 +226,7 @@ export default {
     addSuccess: 'Transação adicionada com sucesso!',
     updateSuccess: 'Transação atualizada com sucesso!',
     amountPlaceholder: 'Digite o valor', // Adicione esta linha
+    addIncomeAndLink: 'Adicionar Receita',
   },
   income: {
     title: "Receitas",
@@ -353,6 +354,12 @@ export default {
     deadline: 'Prazo',
     remaining: 'Restante',
     name: 'Nome',
+    linkToGoal: "Vincular à Meta",
+    incomeAdded: "Receita de",
+    linkSuggestion: "Gostaria de vincular esta receita a alguma meta?",
+    skipLinking: "Pular Vinculação",
+    quickLink: "Vinculação Rápida",
+    quickLinkDescription: "Se não selecionar uma meta agora, poderá vinculá-la depois.",
     color: 'Cor',
     create: 'Criar',
     edit: 'Editar',
