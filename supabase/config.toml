@@ -1,7 +1,19 @@
 project_id = "pqhiyqresnjiktkyjshh"
 
+[functions.evolution-activate-instance]
+verify_jwt = true
+
+[functions.evolution-reconnect]
+verify_jwt = true
+
 [functions.evolution-webhook]
 verify_jwt = false
 
 [functions.process-appointment-reminders]
 verify_jwt = false
+
+[functions.send-whatsapp-notification]
+verify_jwt = true
+
+[functions.verify-whatsapp-number]
+verify_jwt = true

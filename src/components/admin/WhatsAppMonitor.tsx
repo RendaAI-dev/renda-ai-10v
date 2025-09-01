@@ -30,6 +30,7 @@ interface EvolutionConfig {
   instance_name: string;
   api_url: string;
   connection_status: string;
+  is_active: boolean;
   last_connection_check?: string;
   qr_code?: string;
   phone_connected?: string;
@@ -70,6 +71,7 @@ export default function WhatsAppMonitor() {
   });
   const [loading, setLoading] = useState(true);
   const [reconnecting, setReconnecting] = useState(false);
+  const [activating, setActivating] = useState(false);
   const [testNumber, setTestNumber] = useState('');
   const [testMessage, setTestMessage] = useState('🔔 Teste de integração Renda AI com WhatsApp!');
   const [sendingTest, setSendingTest] = useState(false);
@@ -188,6 +190,39 @@ export default function WhatsAppMonitor() {
     }
   };
 
+  const handleActivateInstance = async (activate: boolean) => {
+    if (!config) return;
+    
+    try {
+      setActivating(true);
+      
+      const { data, error } = await supabase.functions.invoke('evolution-activate-instance', {
+        body: {
+          instance_name: config.instance_name,
+          activate: activate
+        }
+      });
+
+      if (error) throw error;
+
+      toast({
+        title: activate ? "Instância Ativada!" : "Instância Desativada!",
+        description: data.message
+      });
+      
+      loadData();
+    } catch (error) {
+      console.error('Erro ao ativar/desativar instância:', error);
+      toast({
+        title: "Erro",
+        description: activate ? "Erro ao ativar instância" : "Erro ao desativar instância",
+        variant: "destructive"
+      });
+    } finally {
+      setActivating(false);
+    }
+  };
+
   const handleReconnect = async () => {
     if (!config) return;
     
@@ -217,10 +252,10 @@ export default function WhatsAppMonitor() {
         });
       }
     } catch (error) {
-      console.error('Erro ao reconectar:', error);
+      console.error('❌ ERRO CRÍTICO no handleReconnect:', error);
       toast({
         title: "Erro",
-        description: "Erro ao tentar reconectar",
+        description: error.message || "Erro ao tentar reconectar",
         variant: "destructive"
       });
     } finally {
@@ -338,6 +373,19 @@ export default function WhatsAppMonitor() {
               <p className="font-medium">{config?.instance_name || 'Não configurado'}</p>
             </div>
             <div className="space-y-1">
+              <p className="text-sm text-gray-500">Status da Instância</p>
+              <div className="flex items-center gap-2">
+                <p className="font-medium">
+                  {config?.is_active ? 'Ativa' : 'Inativa'}
+                </p>
+                {config?.is_active ? (
+                  <Badge className="bg-green-100 text-green-800">Ativa</Badge>
+                ) : (
+                  <Badge className="bg-red-100 text-red-800">Inativa</Badge>
+                )}
+              </div>
+            </div>
+            <div className="space-y-1">
               <p className="text-sm text-gray-500">Número Conectado</p>
               <p className="font-medium">{config?.phone_connected || 'Nenhum'}</p>
             </div>
@@ -351,8 +399,56 @@ export default function WhatsAppMonitor() {
             </div>
           </div>
 
-          {/* QR Code se desconectado */}
-          {config?.connection_status === 'pending' && config?.qr_code && (
+          {/* Instância Inativa */}
+          {config && !config.is_active && (
+            <Alert className="mt-4 border-yellow-200 bg-yellow-50">
+              <AlertCircle className="h-4 w-4 text-yellow-600" />
+              <AlertTitle className="text-yellow-800">Instância Inativa</AlertTitle>
+              <AlertDescription>
+                <p className="mb-3">A instância precisa ser ativada antes de conectar o WhatsApp.</p>
+                <div className="flex gap-2">
+                  <Button
+                    onClick={() => handleActivateInstance(true)}
+                    disabled={activating}
+                    size="sm"
+                    className="bg-green-600 hover:bg-green-700"
+                  >
+                    {activating ? 'Ativando...' : 'Ativar Instância'}
+                  </Button>
+                </div>
+              </AlertDescription>
+            </Alert>
+          )}
+
+          {/* Instância Ativa mas Desconectada */}
+          {config && config.is_active && config.connection_status === 'disconnected' && (
+            <Alert className="mt-4 border-red-200 bg-red-50">
+              <AlertCircle className="h-4 w-4 text-red-600" />
+              <AlertTitle className="text-red-800">Conexão Perdida</AlertTitle>
+              <AlertDescription>
+                <div className="flex gap-2 mt-2">
+                  <Button
+                    onClick={handleReconnect}
+                    disabled={reconnecting}
+                    size="sm"
+                  >
+                    {reconnecting ? 'Reconectando...' : 'Reconectar WhatsApp'}
+                  </Button>
+                  <Button
+                    onClick={() => handleActivateInstance(false)}
+                    disabled={activating}
+                    variant="outline"
+                    size="sm"
+                  >
+                    {activating ? 'Desativando...' : 'Desativar Instância'}
+                  </Button>
+                </div>
+              </AlertDescription>
+            </Alert>
+          )}
+
+          {/* QR Code se aguardando */}
+          {config && config.is_active && config.connection_status === 'pending' && config.qr_code && (
             <Alert className="mt-4">
               <QrCode className="h-4 w-4" />
               <AlertTitle>Escaneie o QR Code</AlertTitle>
@@ -371,20 +467,31 @@ export default function WhatsAppMonitor() {
             </Alert>
           )}
 
-          {/* Botão Reconectar se desconectado */}
-          {config?.connection_status === 'disconnected' && (
-            <Alert className="mt-4 border-red-200 bg-red-50">
-              <AlertCircle className="h-4 w-4 text-red-600" />
-              <AlertTitle className="text-red-800">Conexão Perdida</AlertTitle>
+          {/* Instância Conectada - Opções de Gerenciamento */}
+          {config && config.is_active && config.connection_status === 'connected' && (
+            <Alert className="mt-4 border-green-200 bg-green-50">
+              <CheckCircle className="h-4 w-4 text-green-600" />
+              <AlertTitle className="text-green-800">WhatsApp Conectado!</AlertTitle>
               <AlertDescription>
-                <Button
-                  onClick={handleReconnect}
-                  disabled={reconnecting}
-                  className="mt-2"
-                  size="sm"
-                >
-                  {reconnecting ? 'Reconectando...' : 'Reconectar WhatsApp'}
-                </Button>
+                <p className="mb-3">Número: {config.phone_connected || 'Conectado'}</p>
+                <div className="flex gap-2">
+                  <Button
+                    onClick={handleReconnect}
+                    disabled={reconnecting}
+                    variant="outline"
+                    size="sm"
+                  >
+                    {reconnecting ? 'Reconectando...' : 'Gerar Novo QR'}
+                  </Button>
+                  <Button
+                    onClick={() => handleActivateInstance(false)}
+                    disabled={activating}
+                    variant="outline"
+                    size="sm"
+                  >
+                    {activating ? 'Desativando...' : 'Desativar Instância'}
+                  </Button>
+                </div>
               </AlertDescription>
             </Alert>
           )}
