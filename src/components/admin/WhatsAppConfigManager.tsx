@@ -16,9 +16,9 @@ interface WhatsAppConfig {
 
 const WhatsAppConfigManager: React.FC = () => {
   const [config, setConfig] = useState<WhatsAppConfig>({
-    whatsapp_enabled: false,
-    n8n_webhook_url: '',
-    test_phone: '',
+    whatsapp_enabled: true,
+    n8n_webhook_url: 'https://n8n-webhook.rendaai.com.br/webhook/renda',
+    test_phone: '+5537998743075',
   });
   const [isLoading, setIsLoading] = useState(false);
   const [isTesting, setIsTesting] = useState(false);
