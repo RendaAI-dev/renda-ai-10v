@@ -1,97 +1,73 @@
-# Fluxos N8N para WhatsApp com Evolution API
+# 🚀 N8N Flows para PoupeJá + Evolution API
 
-Este diretório contém os fluxos N8N prontos para integrar o sistema PoupeJá com Evolution API para envio de notificações WhatsApp.
+## 📋 Fluxos Disponíveis
 
-## 📁 Arquivos Disponíveis
+### 1. 🎯 `simple-flow.json` (RECOMENDADO)
+- ✅ **Mais fácil de configurar**
+- ✅ **Funciona imediatamente**
+- ✅ **Apenas 3 configurações necessárias**
+- ⚡ **Setup em 5 minutos**
 
-### 1. `evolution-api-webhook-flow.json`
-**Fluxo usando Webhook para Evolution API**
-- ✅ Mais simples de configurar
-- ✅ Funciona com qualquer versão da Evolution API
-- ✅ Maior compatibilidade
-- ⚠️ Requer configuração manual da autenticação
+### 2. 🔧 `evolution-api-webhook-flow.json`
+- ✅ **Fluxo mais completo**
+- ✅ **Melhor tratamento de erros**
+- ⚠️ **Requer mais configurações**
 
-### 2. `evolution-api-node-flow.json`
-**Fluxo usando Node Nativo Evolution API**
-- ✅ Integração mais nativa
-- ✅ Melhor tratamento de erros
-- ✅ Configuração de credenciais centralizada
-- ⚠️ Requer node Evolution API instalado no N8N
+### 3. 🚀 `evolution-api-node-flow.json`
+- ✅ **Usa node nativo Evolution API**
+- ✅ **Integração mais robusta**
+- ⚠️ **Requer instalação do node Evolution API no N8N**
 
-## 🚀 Como Configurar
+---
 
-### Pré-requisitos
-1. **N8N instalado e funcionando**
-2. **Evolution API configurada e conectada**
-3. **Instância WhatsApp conectada na Evolution API**
-4. **Webhook URL do N8N disponível**
+## ⚡ Setup Rápido (5 Minutos)
 
-### Passo 1: Importar o Fluxo
-1. Acesse seu N8N
-2. Clique em "Import from file"
-3. Selecione um dos arquivos JSON
-4. Clique em "Import"
+### 1️⃣ **Importar Fluxo**
+1. Baixe `simple-flow.json`
+2. N8N → Import from file → Selecionar arquivo
+3. ✅ Fluxo importado!
 
-### Passo 2: Configurar Credenciais (Para Node Flow)
-Se usar o `evolution-api-node-flow.json`:
+### 2️⃣ **Configurar Evolution API**
+No node **"⚙️ Processar Dados"**, edite as 3 linhas:
 
-1. Vá em **Settings > Credentials**
-2. Crie nova credencial **Evolution API**
-3. Configure:
-   - **API URL**: `https://sua-evolution-api.com`
-   - **API Key**: `sua-api-key-evolution`
-   - **Instance**: `sua-instancia`
-
-### Passo 3: Configurar URLs e Instância
-Edite os nodes "Add Evolution Config":
-
-**Para Webhook Flow:**
 ```javascript
-evolutionApiUrl: 'https://sua-evolution-api.com'
-instanceName: 'sua-instancia'
+const EVOLUTION_API_URL = 'https://sua-evolution-api.com';  // ⚠️ SUA URL AQUI
+const EVOLUTION_API_KEY = 'sua-api-key';                   // ⚠️ SUA API KEY AQUI  
+const EVOLUTION_INSTANCE = 'sua-instancia';                // ⚠️ SUA INSTÂNCIA AQUI
 ```
 
-**Para Node Flow:**
-```javascript
-evolutionInstance: 'sua-instancia'
-```
+### 3️⃣ **Ativar Fluxo**
+- Clique em **"Active"** ✅
+- Copie a **URL do Webhook**: `https://seu-n8n.com/webhook/poupeja-simple`
 
-### Passo 4: Configurar Autenticação (Para Webhook Flow)
-Se usar o `evolution-api-webhook-flow.json`:
+### 4️⃣ **Configurar PoupeJá**
+- Acesse: `/admin` → Aba **"WhatsApp + N8N"**
+- **Ativar**: ✅ ON
+- **URL Webhook**: `https://seu-n8n.com/webhook/poupeja-simple`
+- **Salvar** → **Testar Notificação**
 
-1. No node "Send WhatsApp Message"
-2. Configure **Authentication > Generic Credential Type**
-3. Crie credencial **HTTP Header Auth**:
-   - **Name**: `evolutionApiCredential`
-   - **Header Name**: `apikey` (ou conforme sua Evolution API)
-   - **Header Value**: `sua-api-key`
+---
 
-### Passo 5: Ativar o Fluxo
-1. Clique em **Active** para ativar o workflow
-2. Copie a **Webhook URL** gerada
-3. Cole no sistema PoupeJá (Admin > WhatsApp + N8N)
+## 🔧 Configuração PoupeJá
 
-## 🔧 Configuração no PoupeJá
+### Painel Admin (`/admin`)
+1. Vá para aba **"WhatsApp + N8N"**
+2. **Ativar WhatsApp**: ✅ Marcar
+3. **N8N Webhook URL**: `https://seu-n8n.com/webhook/poupeja-simple`
+4. **Telefone Teste**: `+5511999999999`
+5. **Salvar Configurações**
+6. **Testar Notificação** → Deve chegar WhatsApp!
 
-1. Acesse `/admin`
-2. Vá para aba **"WhatsApp + N8N"**
-3. Configure:
-   - ✅ **Ativar Notificações WhatsApp**: ON
-   - 🔗 **URL do Webhook N8N**: `https://seu-n8n.com/webhook/poupeja-whatsapp`
-   - 📱 **Telefone para Teste**: `+5511999999999`
-4. Clique em **"Salvar Configurações"**
-5. Teste com **"Testar Notificação"**
+---
 
-## 📨 Formato dos Dados Enviados
+## 📱 Formato dos Dados Enviados
 
-O sistema PoupeJá envia os seguintes dados para o N8N:
-
-### Para Compromissos
+### 🗓️ **Lembrete de Compromisso**
 ```json
 {
   "type": "appointment_reminder",
   "user": {
-    "phone": "+5511999999999",
+    "phone": "11999999999",
     "name": "João Silva"
   },
   "appointment": {
@@ -99,19 +75,17 @@ O sistema PoupeJá envia os seguintes dados para o N8N:
     "date": "2025-01-27T14:30:00Z",
     "location": "Hospital São Paulo",
     "minutesUntil": 30
-  },
-  "message": "Mensagem customizada (opcional)",
-  "webhookUrl": "https://seu-n8n.com/webhook/poupeja-whatsapp"
+  }
 }
 ```
 
-### Para Transações
+### 💰 **Lembrete de Transação**
 ```json
 {
   "type": "transaction_reminder",
   "user": {
-    "phone": "+5511999999999", 
-    "name": "João Silva"
+    "phone": "11999999999",
+    "name": "Maria Santos"
   },
   "transaction": {
     "title": "Conta de Luz",
@@ -119,108 +93,191 @@ O sistema PoupeJá envia os seguintes dados para o N8N:
     "due_date": "2025-01-30T23:59:59Z",
     "description": "Conta de energia elétrica",
     "category": "Contas Fixas"
-  },
-  "message": "Mensagem customizada (opcional)"
+  }
 }
 ```
 
-## 📱 Exemplo de Mensagens Geradas
-
-### Compromiso
+### 📲 **Mensagem Personalizada**
+```json
+{
+  "type": "custom_notification",
+  "user": {
+    "phone": "11999999999",
+    "name": "Pedro Costa"
+  },
+  "message": "Sua mensagem personalizada aqui!"
+}
 ```
-🗓️ **Lembrete de Compromisso**
 
-Olá, João Silva!
+---
 
-Você tem um compromisso agendado:
-📅 **Consulta Médica**
+## 📝 Exemplos de Mensagens WhatsApp
+
+### 🗓️ **Compromisso**
+```
+🗓️ *Lembrete de Compromisso*
+
+Olá João Silva!
+
+📅 Consulta Médica
 🕐 27/01/2025 às 14:30
-📍 Local: Hospital São Paulo
+📍 Hospital São Paulo
 
-⏰ *Em 30 minutos*
-
-💡 *PoupeJá - Seu assistente financeiro*
+💡 *PoupeJá*
 ```
 
-### Transação  
+### 💰 **Transação**
 ```
-💰 **Lembrete Financeiro**
+💰 *Lembrete Financeiro*
 
-Olá, João Silva!
+Olá Maria Santos!
 
-Você tem uma transação programada:
-📝 **Conta de Luz**
-💵 Valor: R$ 150,50
-📅 Vencimento: 30/01/2025
-🏷️ Categoria: Contas Fixas
+📝 Conta de Luz
+💵 R$ 150,50
+📅 30/01/2025
 
-💡 *PoupeJá - Seu assistente financeiro*
+💡 *PoupeJá*
 ```
 
-## 🐛 Troubleshooting
+---
 
-### ❌ Erro de Autenticação
-- Verifique se a API Key da Evolution API está correta
-- Confirme se a instância está ativa e conectada
-- Teste a API diretamente no Postman
+## 🔍 Troubleshooting
 
-### ❌ Telefone Inválido  
-- O fluxo normaliza automaticamente telefones brasileiros
-- Formato aceito: `11999999999`, `+5511999999999`, `5511999999999`
-- Verifica e adiciona DDI (55) e 9º dígito automaticamente
+### ❌ **Problemas Comuns**
 
-### ❌ Mensagem não Enviada
-- Verifique logs do N8N
-- Confirme se a Evolution API está respondendo
-- Teste o endpoint da Evolution API diretamente
+| Erro | Solução |
+|------|---------|
+| `401 Unauthorized` | ❌ API Key incorreta |
+| `404 Not Found` | ❌ URL ou instância errada |
+| `Connection timeout` | ❌ Evolution API offline |
+| `Invalid phone` | ❌ Telefone sem DDI (55) |
+| `Webhook not receiving` | ❌ URL incorreta no PoupeJá |
 
-### ❌ Webhook não Recebido
-- Verifique se o N8N está acessível externamente  
-- Confirme se a URL do webhook está correta no PoupeJá
-- Teste o webhook com ferramenta como Postman
+### 🧪 **Testar Evolution API**
+```bash
+curl -X POST "https://sua-evolution-api.com/message/sendText/sua-instancia" \\
+  -H "apikey: sua-api-key" \\
+  -H "Content-Type: application/json" \\
+  -d '{
+    "number": "5511999999999",
+    "textMessage": {
+      "text": "Teste Evolution API! 🚀"
+    }
+  }'
+```
 
-## 📈 Monitoramento e Logs
+### 🧪 **Testar N8N**
+```bash
+curl -X POST "https://seu-n8n.com/webhook/poupeja-simple" \\
+  -H "Content-Type: application/json" \\
+  -d '{
+    "type": "test",
+    "user": {
+      "name": "Teste",
+      "phone": "11999999999"
+    },
+    "message": "Teste N8N + Evolution! 🎉"
+  }'
+```
 
-### N8N Logs
-- Acesse **Executions** no N8N para ver histórico
-- Verifique erros e tempos de execução
-- Use **Test Workflow** para debugar
+---
 
-### Evolution API Logs  
-- Monitore logs da Evolution API para erros de envio
-- Verifique status da instância WhatsApp
-- Confirme se mensagens estão sendo entregues
+## 📊 Monitoramento
 
-### PoupeJá Logs
-- Use as ferramentas de debug do sistema
-- Verifique console do navegador para erros
-- Teste notificações pelo painel admin
+### **N8N**
+- **Executions**: Ver histórico de execuções
+- **Logs**: Detalhes de cada node
+- **Errors**: Stack trace completo
 
-## 🔄 Atualizações e Manutenção
+### **Evolution API**
+- **Status**: Verificar se instância está conectada
+- **Logs**: Ver logs de envio
+- **Queue**: Verificar fila de mensagens
 
-### Versioning
-- Mantenha backup dos fluxos funcionais
-- Documente alterações importantes
-- Teste em ambiente de desenvolvimento primeiro
+### **PoupeJá**
+- **Console**: F12 → Console → Erros JavaScript
+- **Network**: Requisições para webhook
+- **Admin Panel**: Status das configurações
 
-### Performance
-- Monitor tempos de resposta dos webhooks
-- Otimize processamento de dados se necessário
-- Configure timeouts apropriados
+---
 
-### Segurança  
-- Mantenha API Keys seguras
-- Use HTTPS para todos os endpoints
-- Configure rate limiting se necessário
+## 🔄 Versionamento
+
+### **v1.0.0** - Versão Inicial
+- ✅ Suporte a lembretes de compromissos
+- ✅ Suporte a lembretes de transações
+- ✅ Normalização automática de telefones
+- ✅ Mensagens personalizadas
+
+### **Próximas Versões**
+- 📊 Analytics de mensagens enviadas
+- 🔄 Queue com retry automático
+- 📱 Suporte a mídia (imagens/documentos)
+- 🤖 Integração com ChatGPT/IA
+
+---
+
+## 🛡️ Segurança
+
+### **Recomendações**
+- ✅ Use HTTPS para webhooks
+- ✅ Valide dados de entrada
+- ✅ Configure rate limiting
+- ✅ Monitore logs regularmente
+- ✅ Mantenha Evolution API atualizada
+
+### **Configuração de Headers**
+```javascript
+// Headers recomendados para Evolution API
+{
+  "apikey": "sua-chave-secreta",
+  "Content-Type": "application/json",
+  "User-Agent": "PoupeJá-N8N/1.0"
+}
+```
+
+---
+
+## 📈 Performance
+
+### **Otimizações**
+- ⚡ Use webhooks em vez de polling
+- ⚡ Configure timeout adequado (30s)
+- ⚡ Implemente cache para dados repetitivos
+- ⚡ Use queue para alta volumetria
+
+### **Limites Recomendados**
+- **Mensagens/minuto**: 60
+- **Timeout**: 30 segundos
+- **Retry**: 3 tentativas
+- **Queue size**: 1000 mensagens
 
 ---
 
 ## 🆘 Suporte
 
-Para problemas ou dúvidas:
-1. Verifique logs do N8N e Evolution API
-2. Teste componentes individualmente
-3. Consulte documentação da Evolution API
-4. Verifique configurações no painel admin do PoupeJá
+### **Ordem de Verificação**
+1. ✅ Evolution API funcionando?
+2. ✅ Instância WhatsApp conectada?
+3. ✅ N8N acessível externamente?
+4. ✅ Webhook URL correta no PoupeJá?
+5. ✅ API Key e configurações corretas?
 
-**Última atualização**: Janeiro 2025
+### **Logs para Verificar**
+- **N8N**: Executions → Ver detalhes
+- **Evolution API**: Console/logs da aplicação
+- **PoupeJá**: Browser console (F12)
+- **Servidor**: Logs de proxy/nginx se aplicável
+
+### **Checklist Final**
+- [ ] Evolution API funcionando
+- [ ] Instância WhatsApp conectada
+- [ ] N8N acessível externamente
+- [ ] Fluxo importado e ativo
+- [ ] Configurações editadas corretamente
+- [ ] URL configurada no PoupeJá
+- [ ] Teste enviado com sucesso
+
+---
+
+**✅ Pronto! Suas notificações WhatsApp estão funcionando!** 🎉

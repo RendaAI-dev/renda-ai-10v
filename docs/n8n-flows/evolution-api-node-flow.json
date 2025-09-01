@@ -1,24 +1,25 @@
 {
-  "name": "PoupeJá WhatsApp - Evolution API Node",
+  "name": "PoupeJá - Evolution API Node Flow",
   "nodes": [
     {
       "parameters": {
         "httpMethod": "POST",
-        "path": "poupeja-whatsapp-node",
+        "path": "poupeja-evolution",
         "responseMode": "responseNode",
         "options": {}
       },
-      "id": "1a1a1a1a-1a1a-1a1a-1a1a-1a1a1a1a1a1a",
+      "id": "webhook-node-01",
       "name": "Webhook Trigger",
-      "type": "n8n-nodes-base.webhook",
+      "type": "n8n-nodes-base.webhookTrigger",
       "typeVersion": 1,
-      "position": [240, 300]
+      "position": [240, 300],
+      "webhookId": "poupeja-evolution"
     },
     {
       "parameters": {
-        "jsCode": "// Processar payload recebido do PoupeJá\nconst data = $input.all()[0].json;\n\n// Extrair informações básicas\nconst user = data.user || {};\nconst type = data.type || 'unknown';\nconst customMessage = data.message || '';\n\n// Formatar telefone brasileiro para formato internacional\nlet phone = user.phone || '';\nphone = phone.replace(/[^0-9]/g, '');\n\n// Normalizar telefone para formato WhatsApp\nif (phone.startsWith('55') && phone.length === 13) {\n  // Já tem DDI completo\n} else if (phone.length === 11) {\n  // Adicionar DDI Brasil\n  phone = '55' + phone;\n} else if (phone.length === 10) {\n  // Adicionar DDI e 9º dígito para celular\n  const ddd = phone.substring(0, 2);\n  const numero = phone.substring(2);\n  phone = '55' + ddd + '9' + numero;\n}\n\n// Processar mensagem baseada no tipo\nlet message = customMessage;\n\nif (type === 'appointment_reminder' && data.appointment) {\n  const appointment = data.appointment;\n  const appointmentDate = new Date(appointment.date);\n  const dateStr = appointmentDate.toLocaleDateString('pt-BR');\n  const timeStr = appointmentDate.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });\n  \n  if (!message) {\n    message = `🗓️ *Lembrete de Compromisso*\\n\\n` +\n             `Olá, ${user.name || 'usuário'}!\\n\\n` +\n             `Você tem um compromisso agendado:\\n` +\n             `📅 **${appointment.title}**\\n` +\n             `🕐 ${dateStr} às ${timeStr}\\n`;\n    \n    if (appointment.location) {\n      message += `📍 Local: ${appointment.location}\\n`;\n    }\n    \n    if (appointment.minutesUntil !== undefined) {\n      if (appointment.minutesUntil <= 0) {\n        message += `\\n⏰ *Seu compromisso é agora!*`;\n      } else if (appointment.minutesUntil <= 60) {\n        message += `\\n⏰ *Em ${appointment.minutesUntil} minutos*`;\n      } else {\n        const hours = Math.floor(appointment.minutesUntil / 60);\n        message += `\\n⏰ *Em ${hours} horas*`;\n      }\n    }\n    \n    message += `\\n\\n💡 *PoupeJá - Seu assistente financeiro*`;\n  }\n} else if (type === 'transaction_reminder' && data.transaction) {\n  const transaction = data.transaction;\n  const dueDate = new Date(transaction.due_date || transaction.date);\n  const dateStr = dueDate.toLocaleDateString('pt-BR');\n  const amount = transaction.amount ? `R$ ${Number(transaction.amount).toFixed(2)}` : 'Valor não informado';\n  \n  if (!message) {\n    message = `💰 *Lembrete Financeiro*\\n\\n` +\n             `Olá, ${user.name || 'usuário'}!\\n\\n` +\n             `Você tem uma transação programada:\\n` +\n             `📝 **${transaction.title}**\\n` +\n             `💵 Valor: ${amount}\\n` +\n             `📅 Vencimento: ${dateStr}\\n`;\n    \n    if (transaction.description) {\n      message += `📄 ${transaction.description}\\n`;\n    }\n    \n    if (transaction.category) {\n      message += `🏷️ Categoria: ${transaction.category}\\n`;\n    }\n    \n    message += `\\n💡 *PoupeJá - Seu assistente financeiro*`;\n  }\n}\n\n// Se não conseguiu gerar mensagem específica, usar a customizada ou padrão\nif (!message) {\n  message = customMessage || `Olá, ${user.name || 'usuário'}!\\n\\nVocê tem uma notificação do PoupeJá.\\n\\n💡 *PoupeJá - Seu assistente financeiro*`;\n}\n\nreturn [{\n  json: {\n    phone: phone,\n    message: message,\n    type: type,\n    user: user,\n    originalData: data,\n    timestamp: new Date().toISOString()\n  }\n}];"
+        "jsCode": "// Processar dados do webhook PoupeJá\nconst data = $input.first().body;\nconst { type, user, appointment, transaction, message } = data;\n\n// Normalizar telefone brasileiro\nfunction normalizePhone(phone) {\n  if (!phone) return '';\n  \n  const cleaned = phone.toString().replace(/\\D/g, '');\n  \n  // Se já começa com 55, manter\n  if (cleaned.startsWith('55')) {\n    return cleaned;\n  }\n  \n  // Se tem 11 dígitos, adicionar 55\n  if (cleaned.length === 11) {\n    return '55' + cleaned;\n  }\n  \n  // Se tem 10 dígitos, adicionar 55\n  if (cleaned.length === 10) {\n    return '55' + cleaned;\n  }\n  \n  return cleaned;\n}\n\n// Construir mensagem personalizada\nfunction buildMessage() {\n  if (message) {\n    return message;\n  }\n  \n  if (type === 'appointment_reminder' && appointment) {\n    const date = new Date(appointment.date).toLocaleDateString('pt-BR');\n    const time = new Date(appointment.date).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });\n    \n    return `🗓️ *Lembrete de Compromisso*\\n\\nOlá ${user.name}!\\n\\n📅 ${appointment.title}\\n🕐 ${date} às ${time}\\n${appointment.location ? `📍 ${appointment.location}` : ''}\\n\\n⏰ Faltam ${appointment.minutesUntil || 30} minutos!\\n\\n💡 *PoupeJá*`;\n  }\n  \n  if (type === 'transaction_reminder' && transaction) {\n    const dueDate = new Date(transaction.due_date).toLocaleDateString('pt-BR');\n    const amount = transaction.amount ? `R$ ${transaction.amount.toFixed(2).replace('.', ',')}` : '';\n    \n    return `💰 *Lembrete Financeiro*\\n\\nOlá ${user.name}!\\n\\n📝 ${transaction.title}\\n${amount ? `💵 ${amount}` : ''}\\n📅 Vencimento: ${dueDate}\\n${transaction.description ? `📋 ${transaction.description}` : ''}\\n${transaction.category ? `🏷️ ${transaction.category}` : ''}\\n\\n💡 *PoupeJá*`;\n  }\n  \n  return `📲 *Notificação PoupeJá*\\n\\nOlá ${user.name}!\\n\\n${message || 'Você tem uma nova notificação do seu assistente financeiro.'}\\n\\n💡 *PoupeJá*`;\n}\n\nconst normalizedPhone = normalizePhone(user.phone);\nconst whatsappMessage = buildMessage();\n\nreturn {\n  phone: normalizedPhone,\n  message: whatsappMessage,\n  type: type,\n  user: user,\n  originalData: data\n};"
       },
-      "id": "2b2b2b2b-2b2b-2b2b-2b2b-2b2b2b2b2b2b",
+      "id": "process-notification-01",
       "name": "Process Notification Data",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
@@ -27,72 +28,83 @@
     {
       "parameters": {
         "conditions": {
-          "string": [
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
             {
-              "value1": "={{ $json.phone }}",
-              "operation": "isNotEmpty"
+              "id": "condition-phone",
+              "leftValue": "={{ $json.phone }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty"
+              }
             }
-          ]
-        }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
       },
-      "id": "3c3c3c3c-3c3c-3c3c-3c3c-3c3c3c3c3c3c",
+      "id": "validate-phone-01",
       "name": "Validate Phone",
       "type": "n8n-nodes-base.if",
-      "typeVersion": 1,
+      "typeVersion": 2,
       "position": [680, 300]
     },
     {
       "parameters": {
-        "instance": "={{ $json.evolutionInstance }}",
-        "number": "={{ $json.phone }}",
+        "authentication": "evolutionApi",
+        "resource": "message",
+        "operation": "sendText",
+        "instanceName": "={{ $json.evolutionInstance }}",
+        "phone": "={{ $json.phone }}",
         "message": "={{ $json.message }}",
-        "additionalFields": {
-          "delay": 1000,
-          "quoted": false
-        }
+        "options": {}
       },
-      "id": "4d4d4d4d-4d4d-4d4d-4d4d-4d4d4d4d4d4d",
+      "id": "evolution-send-01",
       "name": "Evolution API - Send Message",
-      "type": "n8n-nodes-evolution.evolutionApi",
+      "type": "n8n-nodes-base.evolutionApi",
       "typeVersion": 1,
-      "position": [900, 200],
+      "position": [1120, 200],
       "credentials": {
         "evolutionApi": {
-          "id": "evolution-api-credential",
-          "name": "Evolution API Credential"
+          "id": "evolution-api-credentials",
+          "name": "Evolution API Credentials"
         }
       }
     },
     {
       "parameters": {
-        "jsCode": "// Adicionar configurações da Evolution API\nconst input = $input.all()[0].json;\n\nreturn [{\n  json: {\n    ...input,\n    evolutionInstance: 'SUA_INSTANCIA_EVOLUTION',  // Substitua pelo nome da sua instância\n    evolutionApiUrl: 'https://SUA_EVOLUTION_API_URL'  // Para referência\n  }\n}];"
+        "jsCode": "// Adicionar configurações específicas da Evolution API\nconst EVOLUTION_INSTANCE = 'sua-instancia';  // ⚠️ CONFIGURE AQUI\nconst EVOLUTION_API_URL = 'https://sua-evolution-api.com';  // ⚠️ CONFIGURE AQUI\n\nconst currentData = $input.first();\n\nreturn {\n  ...currentData,\n  evolutionInstance: EVOLUTION_INSTANCE,\n  evolutionApiUrl: EVOLUTION_API_URL\n};"
       },
-      "id": "5e5e5e5e-5e5e-5e5e-5e5e-5e5e5e5e5e5e",
+      "id": "add-evolution-config-node-01",
       "name": "Add Evolution Config",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [680, 200]
+      "position": [900, 200]
     },
     {
       "parameters": {
         "respondWith": "json",
-        "responseBody": "={\n  \"success\": true,\n  \"message\": \"WhatsApp notification sent successfully\",\n  \"data\": {\n    \"phone\": \"{{ $json.phone }}\",\n    \"messageId\": \"{{ $json.messageId || 'N/A' }}\",\n    \"timestamp\": \"{{ new Date().toISOString() }}\",\n    \"type\": \"{{ $json.type }}\"\n  }\n}"
+        "responseBody": "={\n  \"success\": true,\n  \"message\": \"Mensagem WhatsApp enviada com sucesso via Evolution API! ✅\",\n  \"phone\": \"{{ $('Process Notification Data').item.json.phone }}\",\n  \"type\": \"{{ $('Process Notification Data').item.json.type }}\",\n  \"timestamp\": \"{{ $now }}\"\n}",
+        "options": {}
       },
-      "id": "6f6f6f6f-6f6f-6f6f-6f6f-6f6f6f6f6f6f",
+      "id": "success-response-node-01",
       "name": "Success Response",
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1,
-      "position": [1120, 200]
+      "position": [1340, 200]
     },
     {
       "parameters": {
         "respondWith": "json",
-        "responseBody": "={\n  \"success\": false,\n  \"error\": \"Invalid phone number\",\n  \"phone\": \"{{ $json.phone || 'empty' }}\",\n  \"timestamp\": \"{{ new Date().toISOString() }}\"\n}",
-        "options": {
-          "responseCode": 400
-        }
+        "responseBody": "={\n  \"success\": false,\n  \"error\": \"Telefone inválido ou vazio ❌\",\n  \"phone\": \"{{ $('Process Notification Data').item.json.phone || 'vazio' }}\",\n  \"timestamp\": \"{{ $now }}\"\n}",
+        "options": {}
       },
-      "id": "7g7g7g7g-7g7g-7g7g-7g7g-7g7g7g7g7g7g",
+      "id": "invalid-phone-response-01",
       "name": "Invalid Phone Response",
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1,
@@ -101,16 +113,14 @@
     {
       "parameters": {
         "respondWith": "json",
-        "responseBody": "={\n  \"success\": false,\n  \"error\": \"Failed to send WhatsApp message\",\n  \"details\": \"{{ $json.error || 'Unknown error' }}\",\n  \"timestamp\": \"{{ new Date().toISOString() }}\"\n}",
-        "options": {
-          "responseCode": 500
-        }
+        "responseBody": "={\n  \"success\": false,\n  \"error\": \"Falha ao enviar mensagem via Evolution API ❌\",\n  \"details\": \"Verifique as credenciais e configurações da Evolution API\",\n  \"timestamp\": \"{{ $now }}\"\n}",
+        "options": {}
       },
-      "id": "8h8h8h8h-8h8h-8h8h-8h8h-8h8h8h8h8h8h",
+      "id": "error-response-node-01",
       "name": "Error Response",
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1,
-      "position": [1120, 400]
+      "position": [1340, 320]
     }
   ],
   "connections": {
@@ -174,31 +184,15 @@
             "index": 0
           }
         ]
-      ],
-      "error": [
-        [
-          {
-          "node": "Error Response",
-          "type": "main",
-          "index": 0
-          }
-        ]
       ]
     }
   },
-  "pinData": {},
+  "active": false,
   "settings": {
     "executionOrder": "v1"
   },
-  "staticData": null,
-  "tags": [
-    {
-      "createdAt": "2025-01-27T10:00:00.000Z",
-      "updatedAt": "2025-01-27T10:00:00.000Z",
-      "id": "poupeja-whatsapp-node",
-      "name": "PoupeJá WhatsApp Node"
-    }
-  ],
-  "triggerCount": 1,
-  "updatedAt": "2025-01-27T10:00:00.000Z"
+  "versionId": "1.0.0",
+  "meta": {
+    "instanceId": "evolution-api-instance"
+  }
 }
