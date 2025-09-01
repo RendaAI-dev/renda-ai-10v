@@ -35,11 +35,35 @@ export const useN8NIntegration = () => {
 
   const loadConfig = useCallback(async () => {
     try {
-      const { data: settings } = await supabase
+      // Verificar se o usuário está autenticado
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        console.warn('User not authenticated - cannot load N8N config');
+        toast({
+          title: 'Acesso negado',
+          description: 'Você precisa estar logado como admin para acessar as configurações do N8N.',
+          variant: 'destructive'
+        });
+        return;
+      }
+
+      const { data: settings, error } = await supabase
         .from('poupeja_settings')
         .select('key, value')
         .in('key', ['n8n_webhook_url', 'n8n_api_key', 'n8n_instance_name', 'n8n_enabled'])
         .eq('category', 'integrations');
+
+      if (error) {
+        console.error('Error loading N8N config:', error);
+        if (error.code === 'PGRST116' || error.message.includes('row-level security')) {
+          toast({
+            title: 'Acesso negado',
+            description: 'Você precisa ter permissões de admin para acessar essas configurações.',
+            variant: 'destructive'
+          });
+        }
+        return;
+      }
 
       if (settings) {
         const configMap = settings.reduce((acc, setting) => {
@@ -53,15 +77,39 @@ export const useN8NIntegration = () => {
           instanceName: configMap.n8n_instance_name || '',
           enabled: configMap.n8n_enabled === 'true'
         });
+      } else {
+        // Configuração padrão se não existir
+        setConfig({
+          webhookUrl: '',
+          apiKey: '',
+          instanceName: '',
+          enabled: false
+        });
       }
     } catch (error) {
       console.error('Error loading N8N config:', error);
+      toast({
+        title: 'Erro',
+        description: 'Não foi possível carregar as configurações do N8N.',
+        variant: 'destructive'
+      });
     }
   }, []);
 
   const saveConfig = useCallback(async (newConfig: N8NConfig) => {
     setIsLoading(true);
     try {
+      // Verificar se o usuário está autenticado
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        toast({
+          title: 'Acesso negado',
+          description: 'Você precisa estar logado como admin para salvar as configurações do N8N.',
+          variant: 'destructive'
+        });
+        return;
+      }
+
       const settings = [
         { key: 'n8n_webhook_url', value: newConfig.webhookUrl },
         { key: 'n8n_api_key', value: newConfig.apiKey || '' },
@@ -70,12 +118,25 @@ export const useN8NIntegration = () => {
       ];
 
       for (const setting of settings) {
-        await supabase.rpc('upsert_setting', {
+        const { error } = await supabase.rpc('upsert_setting', {
           p_category: 'integrations',
           p_key: setting.key,
           p_value: setting.value,
           p_description: `N8N integration ${setting.key}`
         });
+
+        if (error) {
+          console.error(`Error saving setting ${setting.key}:`, error);
+          if (error.code === 'PGRST116' || error.message.includes('row-level security')) {
+            toast({
+              title: 'Acesso negado',
+              description: 'Você precisa ter permissões de admin para salvar essas configurações.',
+              variant: 'destructive'
+            });
+            return;
+          }
+          throw error;
+        }
       }
 
       setConfig(newConfig);
