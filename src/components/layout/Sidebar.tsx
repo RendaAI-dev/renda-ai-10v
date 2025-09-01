@@ -8,7 +8,7 @@ import { usePreferences } from '@/contexts/PreferencesContext';
 import { useUserRole } from '@/hooks/useUserRole';
 import { BrandLogo } from '@/components/common/BrandLogo';
 import { ThemeToggle } from '@/components/theme/ThemeToggle';
-import { LayoutDashboard, Receipt, BarChart3, Target, User, Settings, FolderOpen, Calendar, Crown, LogOut, Shield } from 'lucide-react';
+import { LayoutDashboard, Receipt, BarChart3, Target, User, Settings, FolderOpen, Calendar, Crown, LogOut, Shield, DollarSign } from 'lucide-react';
 
 interface SidebarProps {
   onProfileClick?: () => void;
@@ -114,6 +114,11 @@ const Sidebar: React.FC<SidebarProps> = ({ onProfileClick, onConfigClick }) => {
       icon: Receipt,
       label: t('nav.transactions'),
       href: '/transactions'
+    },
+    {
+      icon: DollarSign,
+      label: t('nav.budgets'),
+      href: '/budgets'
     },
     {
       icon: FolderOpen,

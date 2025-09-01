@@ -14,6 +14,50 @@ export type Database = {
   }
   public: {
     Tables: {
+      poupeja_budgets: {
+        Row: {
+          amount: number
+          category_id: string | null
+          created_at: string | null
+          end_date: string
+          id: string
+          period: string
+          start_date: string
+          updated_at: string | null
+          user_id: string | null
+        }
+        Insert: {
+          amount: number
+          category_id?: string | null
+          created_at?: string | null
+          end_date: string
+          id?: string
+          period: string
+          start_date: string
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          amount?: number
+          category_id?: string | null
+          created_at?: string | null
+          end_date?: string
+          id?: string
+          period?: string
+          start_date?: string
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "poupeja_budgets_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "poupeja_categories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       poupeja_categories: {
         Row: {
           color: string

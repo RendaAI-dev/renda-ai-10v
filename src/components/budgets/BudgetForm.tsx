@@ -33,7 +33,7 @@ type BudgetFormValues = z.infer<typeof budgetSchema>;
 interface BudgetFormProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  initialData?: Partial<Budget>;
+  initialData?: any;
   mode: 'create' | 'edit';
 }
 
@@ -122,9 +122,9 @@ const BudgetForm: React.FC<BudgetFormProps> = ({ open, onOpenChange, initialData
       };
 
       if (mode === 'edit' && initialData?.id) {
-        await updateBudget(initialData.id, budgetData);
+        await updateBudget(initialData.id, budgetData as any);
       } else {
-        await createBudget(budgetData);
+        await createBudget(budgetData as any);
       }
 
       onOpenChange(false);

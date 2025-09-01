@@ -20,6 +20,7 @@ import ResetPasswordPage from "./pages/ResetPasswordPage";
 import ProfilePage from "./pages/ProfilePage";
 import TransactionsPage from "./pages/TransactionsPage";
 import ExpensesPage from "./pages/ExpensesPage";
+import BudgetsPage from "./pages/BudgetsPage";
 import GoalsPage from "./pages/GoalsPage";
 import ReportsPage from "./pages/ReportsPage";
 import SchedulePage from "./pages/SchedulePage";
@@ -60,6 +61,7 @@ function App() {
                         <Route path="/profile" element={<ProfilePage />} />
                         <Route path="/transactions" element={<TransactionsPage />} />
                         <Route path="/expenses" element={<ExpensesPage />} />
+                        <Route path="/budgets" element={<BudgetsPage />} />
                         <Route path="/goals" element={<GoalsPage />} />
                         <Route path="/reports" element={<ReportsPage />} />
                         <Route path="/schedule" element={<SchedulePage />} />

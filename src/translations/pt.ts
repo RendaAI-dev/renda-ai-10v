@@ -64,6 +64,7 @@ export default {
     settings: "Configurações",
     categories: "Categorias",
     expenses: "Despesas",
+    budgets: "Orçamentos",
     plans: "Planos",
   },
   auth: {
@@ -242,6 +243,18 @@ export default {
     deleteExpense: "Excluir Despesa",
     expenseDetails: "Detalhes da Despesa",
     expenseHistory: "Histórico de Despesas",
+  },
+  budgets: {
+    title: "Orçamentos",
+    description: "Gerencie seus orçamentos por categoria",
+    add: "Criar Orçamento", 
+    edit: "Editar Orçamento",
+    overview: "Visão Geral",
+    manage: "Gerenciar",
+    totalAmount: "Total Orçado",
+    activeBudgets: "Orçamentos Ativos",
+    nearLimit: "Próximos do Limite",
+    exceeded: "Excedidos",
   },
   category: {
     title: "Categorias",

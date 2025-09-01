@@ -30,7 +30,7 @@ export const useBudgets = () => {
       
       // Fetch budgets with category information
       const { data: budgetData, error: budgetError } = await supabase
-        .from('poupeja_budgets')
+        .from('poupeja_budgets' as any)
         .select(`
           *,
           poupeja_categories (
@@ -49,7 +49,7 @@ export const useBudgets = () => {
 
       // Calculate spent amounts for each budget
       const budgetsWithSpent = await Promise.all(
-        budgetData.map(async (budget) => {
+        budgetData.map(async (budget: any) => {
           const { data: transactionData } = await supabase
             .from('poupeja_transactions')
             .select('amount')
@@ -85,10 +85,10 @@ export const useBudgets = () => {
     }
   };
 
-  const createBudget = async (budgetData: Omit<Budget, 'id' | 'user_id' | 'spent' | 'percentage' | 'created_at' | 'updated_at'>) => {
+  const createBudget = async (budgetData: any) => {
     try {
       const { data, error } = await supabase
-        .from('poupeja_budgets')
+        .from('poupeja_budgets' as any)
         .insert([{
           ...budgetData,
           user_id: (await supabase.auth.getUser()).data.user?.id
@@ -116,10 +116,10 @@ export const useBudgets = () => {
     }
   };
 
-  const updateBudget = async (id: string, budgetData: Partial<Budget>) => {
+  const updateBudget = async (id: string, budgetData: any) => {
     try {
       const { error } = await supabase
-        .from('poupeja_budgets')
+        .from('poupeja_budgets' as any)
         .update(budgetData)
         .eq('id', id);
 
@@ -146,7 +146,7 @@ export const useBudgets = () => {
   const deleteBudget = async (id: string) => {
     try {
       const { error } = await supabase
-        .from('poupeja_budgets')
+        .from('poupeja_budgets' as any)
         .delete()
         .eq('id', id);
 
