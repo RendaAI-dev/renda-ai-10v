@@ -33,6 +33,8 @@ import RegisterPage from "./pages/RegisterPage";
 import ForgotPasswordPage from "./pages/ForgotPasswordPage";
 import ResetPasswordPage from "./pages/ResetPasswordPage";
 import RegisterWithPlanPage from "./pages/RegisterWithPlanPage";
+import PrivacyPage from "./pages/PrivacyPage";
+import TermsPage from "./pages/TermsPage";
 
 const queryClient = new QueryClient();
 
@@ -71,6 +73,8 @@ function App() {
                          <Route path="/forgot-password" element={<ForgotPasswordPage />} />
                          <Route path="/reset-password" element={<ResetPasswordPage />} />
                          <Route path="/register-with-plan" element={<RegisterWithPlanPage />} />
+                         <Route path="/privacy" element={<PrivacyPage />} />
+                         <Route path="/terms" element={<TermsPage />} />
                         <Route path="*" element={<div className="text-center p-8">Página não encontrada</div>} />
                       </Routes>
                     </BrowserRouter>
