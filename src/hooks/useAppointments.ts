@@ -29,9 +29,7 @@ export const useAppointments = () => {
 
   const addAppointment = async (appointment: Omit<Appointment, 'id' | 'userId' | 'createdAt' | 'updatedAt'>) => {
     try {
-      console.log('=== HOOK DEBUG: addAppointment called with:', appointment);
       const newAppointment = await appointmentService.addAppointment(appointment);
-      console.log('=== HOOK DEBUG: appointmentService.addAppointment returned:', newAppointment);
       setAppointments(prev => [...prev, newAppointment]);
       toast({
         title: "Compromisso criado",
@@ -39,7 +37,6 @@ export const useAppointments = () => {
       });
       return newAppointment;
     } catch (error) {
-      console.error('=== HOOK DEBUG: Error in addAppointment:', error);
       toast({
         title: "Erro ao criar compromisso",
         description: "Não foi possível criar o compromisso.",

@@ -2,8 +2,6 @@
 import { supabase } from "@/integrations/supabase/client";
 import { Transaction } from "@/types";
 import { v4 as uuidv4 } from "uuid";
-import { n8nIntegrationService } from "./n8nIntegrationService";
-import { getCurrentUser } from "./userService";
 
 export const getTransactions = async (): Promise<Transaction[]> => {
   try {
@@ -104,33 +102,6 @@ export const addTransaction = async (transaction: Omit<Transaction, "id">): Prom
         console.error("Error updating goal amount:", goalError);
       } else {
         console.log("Goal amount updated successfully");
-        
-        // Trigger N8N automation for goal progress (async, non-blocking)
-        try {
-          const { data: goalData } = await supabase
-            .from("poupeja_goals")
-            .select("*")
-            .eq("id", transaction.goalId)
-            .single();
-          
-          if (goalData) {
-            const progressPercent = (goalData.current_amount + transaction.amount) / goalData.target_amount * 100;
-            
-            const currentUser = await getCurrentUser();
-            if (currentUser && currentUser.phone && progressPercent >= 25) {
-              console.log('Triggering N8N automation for goal progress:', transaction.goalId);
-              await n8nIntegrationService.onGoalProgress({
-                id: goalData.id,
-                name: goalData.name,
-                target_amount: goalData.target_amount,
-                current_amount: goalData.current_amount + transaction.amount
-              }, currentUser, progressPercent);
-              console.log('N8N goal progress automation triggered successfully');
-            }
-          }
-        } catch (n8nError) {
-          console.error('N8N goal progress automation failed:', n8nError);
-        }
       }
     }
 
