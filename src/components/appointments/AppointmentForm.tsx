@@ -11,7 +11,6 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Calendar, Clock, MapPin, Bell } from "lucide-react";
 import { Appointment } from "@/services/appointmentService";
 import { format } from "date-fns";
-import { formatInTimeZone, fromZonedTime } from "date-fns-tz";
 
 interface AppointmentFormProps {
   appointment?: Appointment;
@@ -48,12 +47,20 @@ export const AppointmentForm: React.FC<AppointmentFormProps> = ({
     appointment?.reminderEnabled || false
   );
 
+  // Helper function to convert UTC to Brazilian time for display
+  const convertUTCToBrazilTime = (utcDate: string) => {
+    const date = new Date(utcDate);
+    // Brazil is UTC-3, so we subtract 3 hours from UTC
+    const brazilTime = new Date(date.getTime() - 3 * 60 * 60 * 1000);
+    return format(brazilTime, "yyyy-MM-dd'T'HH:mm");
+  };
+
   const { register, handleSubmit, formState: { errors }, setValue, watch } = useForm({
     defaultValues: {
       title: appointment?.title || "",
       description: appointment?.description || "",
       appointmentDate: appointment?.appointmentDate 
-        ? formatInTimeZone(new Date(appointment.appointmentDate), 'America/Sao_Paulo', "yyyy-MM-dd'T'HH:mm")
+        ? convertUTCToBrazilTime(appointment.appointmentDate)
         : "",
       category: appointment?.category || "meeting",
       location: appointment?.location || "",
@@ -73,9 +80,10 @@ export const AppointmentForm: React.FC<AppointmentFormProps> = ({
   };
 
   const handleFormSubmit = (data: any) => {
-    // Convert datetime-local to proper ISO string with Brazil timezone
+    // Convert datetime-local (Brazil time) to UTC for storage
     const localDateTime = new Date(data.appointmentDate + ':00'); // Add seconds
-    const utcDateTime = fromZonedTime(localDateTime, 'America/Sao_Paulo');
+    // Brazil is UTC-3, so we add 3 hours to convert to UTC
+    const utcDateTime = new Date(localDateTime.getTime() + 3 * 60 * 60 * 1000);
     
     const appointmentData: Omit<Appointment, 'id' | 'userId' | 'createdAt' | 'updatedAt'> = {
       title: data.title,
