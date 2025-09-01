@@ -2,29 +2,32 @@ import { supabase } from '@/integrations/supabase/client';
 import { notificationService } from './notificationService';
 
 export interface N8NTriggerData {
-  event: 'appointment_created' | 'transaction_due' | 'goal_progress' | 'payment_reminder' | 'budget_exceeded';
-  userId: string;
-  data: {
-    id: string;
-    title: string;
-    description?: string;
-    amount?: number;
-    date?: string;
-    category?: string;
-    status?: string;
-    metadata?: Record<string, any>;
-  };
+  type: 'appointment_created' | 'appointment_reminder' | 'transaction_due' | 'transaction_reminder' | 'goal_progress' | 'goal_achieved' | 'budget_exceeded' | 'custom';
   user: {
     id: string;
     name: string;
     email: string;
     phone?: string;
   };
-  automationRules?: {
-    sendWhatsApp?: boolean;
-    sendEmail?: boolean;
-    reminderMinutes?: number;
-    priority?: 'low' | 'medium' | 'high';
+  data: {
+    id?: string;
+    title: string;
+    description?: string;
+    amount?: number;
+    date?: string;
+    category?: string;
+    status?: string;
+    location?: string;
+    metadata?: Record<string, any>;
+  };
+  message?: string;
+  metadata?: {
+    evolutionApi?: {
+      apiUrl?: string;
+      apiKey?: string;
+      instance?: string;
+    };
+    [key: string]: any;
   };
 }
 
@@ -125,22 +128,26 @@ class N8NIntegrationService {
     }
 
     try {
+      // Enhanced payload structure matching the corrected N8N flow
       const payload = {
-        event: data.event,
-        timestamp: new Date().toISOString(),
-        source: 'poupeja',
+        type: data.type,
         user: data.user,
         data: data.data,
-        automationRules: data.automationRules || {},
-        config: {
+        message: data.message,
+        timestamp: new Date().toISOString(),
+        source: 'poupeja',
+        metadata: {
+          ...data.metadata,
           evolutionApi: {
-            instance: this.config.n8n_instance_name,
-            apiUrl: this.config.evolution_api_url
+            apiUrl: data.metadata?.evolutionApi?.apiUrl || this.config.evolution_api_url || 'https://sua-evolution-api.com',
+            apiKey: data.metadata?.evolutionApi?.apiKey || this.config.evolution_api_key || 'sua-api-key-aqui',
+            instance: data.metadata?.evolutionApi?.instance || this.config.n8n_instance_name || 'sua-instancia'
           }
         }
       };
 
-      console.log('=== N8N DEBUG: Triggering N8N automation with payload:', payload);
+      console.log('=== N8N DEBUG: Enhanced payload for corrected flow:', payload);
+      console.log('=== N8N DEBUG: Evolution API Config:', payload.metadata.evolutionApi);
       console.log('=== N8N DEBUG: Webhook URL:', this.config.n8n_webhook_url);
 
       const controller = new AbortController();
@@ -185,61 +192,54 @@ class N8NIntegrationService {
   // Specific automation triggers
   async onAppointmentCreated(appointment: any, user: any) {
     return this.triggerAutomation({
-      event: 'appointment_created',
-      userId: user.id,
-      data: {
-        id: appointment.id,
-        title: appointment.title,
-        description: appointment.description,
-        date: appointment.appointment_date,
-        category: appointment.category,
-        status: appointment.status
-      },
+      type: 'appointment_created',
       user: {
         id: user.id,
         name: user.name,
         email: user.email,
         phone: user.phone
       },
-      automationRules: {
-        sendWhatsApp: appointment.reminder_enabled,
-        reminderMinutes: appointment.reminder_times?.[0] || 60,
-        priority: 'medium'
+      data: {
+        id: appointment.id,
+        title: appointment.title,
+        description: appointment.description,
+        date: appointment.appointment_date,
+        location: appointment.location,
+        category: appointment.category
       }
     });
   }
 
   async onTransactionDue(transaction: any, user: any) {
     return this.triggerAutomation({
-      event: 'transaction_due',
-      userId: user.id,
-      data: {
-        id: transaction.id,
-        title: transaction.description,
-        amount: transaction.amount,
-        date: transaction.scheduled_date,
-        status: transaction.status
-      },
+      type: 'transaction_due',
       user: {
         id: user.id,
         name: user.name,
         email: user.email,
         phone: user.phone
       },
-      automationRules: {
-        sendWhatsApp: transaction.reminder_enabled,
-        reminderMinutes: transaction.reminder_time || 60,
-        priority: 'high'
+      data: {
+        id: transaction.id,
+        title: transaction.description,
+        description: transaction.description,
+        amount: transaction.amount,
+        date: transaction.scheduled_date
       }
     });
   }
 
   async onGoalProgress(goal: any, user: any, progressPercent: number) {
-    const priority = progressPercent >= 90 ? 'high' : progressPercent >= 50 ? 'medium' : 'low';
+    const eventType = progressPercent >= 100 ? 'goal_achieved' : 'goal_progress';
     
     return this.triggerAutomation({
-      event: 'goal_progress',
-      userId: user.id,
+      type: eventType,
+      user: {
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        phone: user.phone
+      },
       data: {
         id: goal.id,
         title: goal.name,
@@ -249,24 +249,19 @@ class N8NIntegrationService {
           progress_percent: progressPercent,
           remaining_amount: goal.target_amount - goal.current_amount
         }
-      },
-      user: {
-        id: user.id,
-        name: user.name,
-        email: user.email,
-        phone: user.phone
-      },
-      automationRules: {
-        sendWhatsApp: progressPercent >= 25, // Send WhatsApp for significant progress
-        priority
       }
     });
   }
 
   async onBudgetExceeded(budget: any, user: any, exceededAmount: number) {
     return this.triggerAutomation({
-      event: 'budget_exceeded',
-      userId: user.id,
+      type: 'budget_exceeded',
+      user: {
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        phone: user.phone
+      },
       data: {
         id: budget.id,
         title: `Orçamento: ${budget.category_name || 'Geral'}`,
@@ -276,16 +271,6 @@ class N8NIntegrationService {
           spent_amount: budget.amount + exceededAmount,
           period: budget.period
         }
-      },
-      user: {
-        id: user.id,
-        name: user.name,
-        email: user.email,
-        phone: user.phone
-      },
-      automationRules: {
-        sendWhatsApp: true,
-        priority: 'high'
       }
     });
   }
@@ -303,23 +288,18 @@ class N8NIntegrationService {
     }
 
     return this.triggerAutomation({
-      event: 'appointment_created',
-      userId: 'test-user',
-      data: {
-        id: 'test-id',
-        title: 'Teste de Conexão N8N',
-        description: 'Este é um teste de conectividade'
-      },
+      type: 'custom',
       user: {
         id: 'test-user',
         name: 'Usuário Teste',
         email: 'teste@teste.com',
         phone: '5511999999999'
       },
-      automationRules: {
-        sendWhatsApp: false,
-        priority: 'low'
-      }
+      data: {
+        title: 'Teste de Conexão N8N',
+        description: 'Este é um teste de conectividade com o fluxo corrigido'
+      },
+      message: '🧪 *Teste de Conexão*\\n\\nOlá Usuário Teste!\\n\\nEste é um teste de conectividade do N8N com o PoupeJá.\\n\\n✅ Se você receber esta mensagem, a integração está funcionando!\\n\\n💡 *PoupeJá - Sistema de Teste*'
     });
   }
 }
