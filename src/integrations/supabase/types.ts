@@ -166,6 +166,54 @@ export type Database = {
         }
         Relationships: []
       }
+      poupeja_evolution_config: {
+        Row: {
+          api_key: string
+          api_url: string
+          connection_status: string | null
+          created_at: string
+          id: string
+          instance_name: string
+          is_active: boolean | null
+          last_connection_check: string | null
+          metadata: Json | null
+          phone_connected: string | null
+          qr_code: string | null
+          updated_at: string
+          webhook_url: string | null
+        }
+        Insert: {
+          api_key: string
+          api_url: string
+          connection_status?: string | null
+          created_at?: string
+          id?: string
+          instance_name: string
+          is_active?: boolean | null
+          last_connection_check?: string | null
+          metadata?: Json | null
+          phone_connected?: string | null
+          qr_code?: string | null
+          updated_at?: string
+          webhook_url?: string | null
+        }
+        Update: {
+          api_key?: string
+          api_url?: string
+          connection_status?: string | null
+          created_at?: string
+          id?: string
+          instance_name?: string
+          is_active?: boolean | null
+          last_connection_check?: string | null
+          metadata?: Json | null
+          phone_connected?: string | null
+          qr_code?: string | null
+          updated_at?: string
+          webhook_url?: string | null
+        }
+        Relationships: []
+      }
       poupeja_goals: {
         Row: {
           color: string | null
@@ -207,6 +255,69 @@ export type Database = {
           user_id?: string | null
         }
         Relationships: []
+      }
+      poupeja_message_queue: {
+        Row: {
+          appointment_id: string | null
+          created_at: string
+          error_message: string | null
+          id: string
+          max_retries: number | null
+          message_content: string
+          recipient_number: string
+          retry_count: number | null
+          scheduled_for: string
+          sent_at: string | null
+          status: string | null
+          template_id: string | null
+          user_id: string
+        }
+        Insert: {
+          appointment_id?: string | null
+          created_at?: string
+          error_message?: string | null
+          id?: string
+          max_retries?: number | null
+          message_content: string
+          recipient_number: string
+          retry_count?: number | null
+          scheduled_for: string
+          sent_at?: string | null
+          status?: string | null
+          template_id?: string | null
+          user_id: string
+        }
+        Update: {
+          appointment_id?: string | null
+          created_at?: string
+          error_message?: string | null
+          id?: string
+          max_retries?: number | null
+          message_content?: string
+          recipient_number?: string
+          retry_count?: number | null
+          scheduled_for?: string
+          sent_at?: string | null
+          status?: string | null
+          template_id?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "poupeja_message_queue_appointment_id_fkey"
+            columns: ["appointment_id"]
+            isOneToOne: false
+            referencedRelation: "poupeja_appointments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "poupeja_message_queue_template_id_fkey"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "poupeja_message_templates"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       poupeja_message_templates: {
         Row: {
