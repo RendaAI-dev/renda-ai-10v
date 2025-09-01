@@ -19,24 +19,32 @@ export interface NotificationLog {
   id: string;
   user_id: string;
   appointment_id?: string;
-  whatsapp_number?: string;
+  notification_type: string;
+  channel: string;
+  status: string;
+  recipient: string;
   message_content?: string;
-  status: 'pending' | 'sent' | 'delivered' | 'failed' | 'read';
+  message_id?: string;
+  error_message?: string;
+  reminder_time_minutes?: number;
   sent_at?: string;
   delivered_at?: string;
-  error_message?: string;
-  retry_count: number;
+  read_at?: string;
+  metadata?: any;
   created_at: string;
-  updated_at: string;
 }
 
 export interface MessageTemplate {
   id: string;
-  user_id?: string;
-  template_type: 'reminder' | 'confirmation' | 'cancellation';
-  title: string;
-  message_content: string;
-  is_default: boolean;
+  name: string;
+  template_type: string;
+  content: string;
+  subject?: string;
+  description?: string;
+  channel: string;
+  language: string;
+  variables?: string[];
+  is_system: boolean;
   is_active: boolean;
   created_at: string;
   updated_at: string;
@@ -92,21 +100,17 @@ class WhatsAppService {
     const { data, error } = await supabase
       .from('poupeja_message_templates')
       .select('*')
-      .or('user_id.is.null,user_id.eq.' + (await supabase.auth.getUser()).data.user?.id)
       .eq('is_active', true)
-      .order('is_default', { ascending: false });
+      .order('is_system', { ascending: false });
 
     if (error) throw error;
     return (data || []) as MessageTemplate[];
   }
 
-  async createMessageTemplate(template: Omit<MessageTemplate, 'id' | 'user_id' | 'created_at' | 'updated_at'>): Promise<MessageTemplate> {
+  async createMessageTemplate(template: Omit<MessageTemplate, 'id' | 'created_at' | 'updated_at'>): Promise<MessageTemplate> {
     const { data, error } = await supabase
       .from('poupeja_message_templates')
-      .insert({
-        ...template,
-        user_id: (await supabase.auth.getUser()).data.user?.id
-      })
+      .insert(template)
       .select()
       .single();
 
@@ -146,13 +150,10 @@ class WhatsAppService {
     return (data || []) as NotificationLog[];
   }
 
-  async createNotificationLog(log: Omit<NotificationLog, 'id' | 'user_id' | 'created_at' | 'updated_at'>): Promise<NotificationLog> {
+  async createNotificationLog(log: Omit<NotificationLog, 'id' | 'created_at'>): Promise<NotificationLog> {
     const { data, error } = await supabase
       .from('poupeja_notification_logs')
-      .insert({
-        ...log,
-        user_id: (await supabase.auth.getUser()).data.user?.id
-      })
+      .insert(log)
       .select()
       .single();
 
@@ -236,7 +237,7 @@ class WhatsAppService {
 
     // Get message template
     const templates = await this.getMessageTemplates();
-    const reminderTemplate = templates.find(t => t.template_type === 'reminder' && t.is_default);
+    const reminderTemplate = templates.find(t => t.template_type.includes('reminder') && t.is_system);
     
     if (!reminderTemplate) {
       throw new Error('Reminder template not found');
@@ -250,7 +251,7 @@ class WhatsAppService {
       // Don't schedule past reminders
       if (scheduledDate <= new Date()) continue;
 
-      const message = this.formatMessageTemplate(reminderTemplate.message_content, appointment);
+      const message = this.formatMessageTemplate(reminderTemplate.content, appointment);
 
       await this.addToQueue({
         appointment_id: appointmentId,

@@ -102,7 +102,7 @@ export const useWhatsAppNotifications = () => {
 
       // Get confirmation template
       const templates = await whatsappService.getMessageTemplates();
-      const confirmationTemplate = templates.find(t => t.template_type === 'confirmation' && t.is_default);
+      const confirmationTemplate = templates.find(t => t.template_type === 'appointment_confirmation' && t.is_system);
       
       if (!confirmationTemplate) {
         return { success: false, reason: 'template_not_found' };
@@ -113,7 +113,7 @@ export const useWhatsAppNotifications = () => {
       const formattedDate = appointmentDate.toLocaleDateString('pt-BR');
       const formattedTime = appointmentDate.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
 
-      const message = confirmationTemplate.message_content
+      const message = confirmationTemplate.content
         .replace(/\{\{date\}\}/g, formattedDate)
         .replace(/\{\{time\}\}/g, formattedTime)
         .replace(/\{\{description\}\}/g, appointment.description || 'Sem descrição')
@@ -138,7 +138,7 @@ export const useWhatsAppNotifications = () => {
 
       // Get cancellation template
       const templates = await whatsappService.getMessageTemplates();
-      const cancellationTemplate = templates.find(t => t.template_type === 'cancellation' && t.is_default);
+      const cancellationTemplate = templates.find(t => t.template_type === 'appointment_cancellation' && t.is_system);
       
       if (!cancellationTemplate) {
         return { success: false, reason: 'template_not_found' };
@@ -149,7 +149,7 @@ export const useWhatsAppNotifications = () => {
       const formattedDate = appointmentDate.toLocaleDateString('pt-BR');
       const formattedTime = appointmentDate.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
 
-      const message = cancellationTemplate.message_content
+      const message = cancellationTemplate.content
         .replace(/\{\{date\}\}/g, formattedDate)
         .replace(/\{\{time\}\}/g, formattedTime)
         .replace(/\{\{description\}\}/g, appointment.description || 'Sem descrição')
