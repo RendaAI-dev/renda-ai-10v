@@ -21,6 +21,7 @@ import GoalsPage from "./pages/GoalsPage";
 import ReportsPage from "./pages/ReportsPage";
 import SchedulePage from "./pages/SchedulePage";
 import SettingsPage from "./pages/SettingsPage";
+import ProfilePage from "./pages/ProfilePage";
 
 const queryClient = new QueryClient();
 
@@ -44,8 +45,9 @@ function App() {
                         <Route path="/goals" element={<GoalsPage />} />
                         <Route path="/reports" element={<ReportsPage />} />
                         <Route path="/schedule" element={<SchedulePage />} />
-                        <Route path="/appointments" element={<AppointmentsPage />} />
-                        <Route path="/settings" element={<SettingsPage />} />
+                         <Route path="/appointments" element={<AppointmentsPage />} />
+                         <Route path="/settings" element={<SettingsPage />} />
+                         <Route path="/profile" element={<ProfilePage />} />
                         <Route path="*" element={<div className="text-center p-8">Página não encontrada</div>} />
                       </Routes>
                     </BrowserRouter>
