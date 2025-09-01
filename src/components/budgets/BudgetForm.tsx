@@ -23,8 +23,8 @@ import { Loader2 } from 'lucide-react';
 const budgetSchema = z.object({
   category_id: z.string().min(1, 'Selecione uma categoria'),
   amount: z.number().positive('O valor deve ser positivo'),
-  period: z.enum(['weekly', 'monthly', 'yearly'], {
-    required_error: 'Selecione um período',
+  period: z.enum(['weekly', 'monthly', 'yearly']).refine(val => val, {
+    message: 'Selecione um período',
   }),
 });
 
