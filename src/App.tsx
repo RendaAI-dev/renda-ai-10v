@@ -7,8 +7,20 @@ import { SubscriptionProvider } from "@/contexts/SubscriptionContext";
 import { BrandingProvider } from "@/contexts/BrandingContext";
 import { AppProvider } from "@/contexts/AppContext";
 import { SupabaseInitializer } from "@/components/common/SupabaseInitializer";
-import { AppointmentsPageSimple } from "./pages/AppointmentsPageSimple";
+import { Toaster } from "@/components/ui/toaster";
+import { Toaster as Sonner } from "@/components/ui/sonner";
+import { TooltipProvider } from "@/components/ui/tooltip";
+
+// Import pages
 import Index from "./pages/Index";
+import { AppointmentsPage } from "./pages/AppointmentsPage";
+import TransactionsPage from "./pages/TransactionsPage";
+import CategoriesPage from "./pages/CategoriesPage";
+import BudgetsPage from "./pages/BudgetsPage";
+import GoalsPage from "./pages/GoalsPage";
+import ReportsPage from "./pages/ReportsPage";
+import SchedulePage from "./pages/SchedulePage";
+import SettingsPage from "./pages/SettingsPage";
 
 const queryClient = new QueryClient();
 
@@ -16,24 +28,35 @@ function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
-        <BrandingProvider>
-          <PreferencesProvider>
-            <SupabaseInitializer>
-              <SubscriptionProvider>
-                <AppProvider>
-                  <BrowserRouter>
-                    <Routes>
-                      <Route path="/" element={<div>Home</div>} />
-                      <Route path="/dashboard" element={<Index />} />
-                      <Route path="/appointments" element={<AppointmentsPageSimple />} />
-                      <Route path="*" element={<div>Página não encontrada</div>} />
-                    </Routes>
-                  </BrowserRouter>
-                </AppProvider>
-              </SubscriptionProvider>
-            </SupabaseInitializer>
-          </PreferencesProvider>
-        </BrandingProvider>
+        <TooltipProvider>
+          <BrandingProvider>
+            <PreferencesProvider>
+              <SupabaseInitializer>
+                <SubscriptionProvider>
+                  <AppProvider>
+                    <BrowserRouter>
+                      <Routes>
+                        <Route path="/" element={<Index />} />
+                        <Route path="/dashboard" element={<Index />} />
+                        <Route path="/transactions" element={<TransactionsPage />} />
+                        <Route path="/categories" element={<CategoriesPage />} />
+                        <Route path="/budgets" element={<BudgetsPage />} />
+                        <Route path="/goals" element={<GoalsPage />} />
+                        <Route path="/reports" element={<ReportsPage />} />
+                        <Route path="/schedule" element={<SchedulePage />} />
+                        <Route path="/appointments" element={<AppointmentsPage />} />
+                        <Route path="/settings" element={<SettingsPage />} />
+                        <Route path="*" element={<div className="text-center p-8">Página não encontrada</div>} />
+                      </Routes>
+                    </BrowserRouter>
+                    <Toaster />
+                    <Sonner />
+                  </AppProvider>
+                </SubscriptionProvider>
+              </SupabaseInitializer>
+            </PreferencesProvider>
+          </BrandingProvider>
+        </TooltipProvider>
       </ThemeProvider>
     </QueryClientProvider>
   );
