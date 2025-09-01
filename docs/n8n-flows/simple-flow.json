@@ -1,0 +1,188 @@
+{
+  "name": "PoupeJá WhatsApp - Simples",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "poupeja-simple",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "webhook-node",
+      "name": "📥 Receber Notificação",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [240, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "// 🔄 CONFIGURAÇÕES - EDITE AQUI\nconst EVOLUTION_API_URL = 'https://sua-evolution-api.com';\nconst EVOLUTION_API_KEY = 'sua-api-key';\nconst EVOLUTION_INSTANCE = 'sua-instancia';\n\n// ===============================\n// 📨 Processar dados recebidos\nconst data = $input.all()[0].json;\nconst user = data.user || {};\nconst type = data.type || 'notification';\n\n// 📱 Normalizar telefone\nlet phone = (user.phone || '').replace(/[^0-9]/g, '');\nif (!phone.startsWith('55') && phone.length >= 10) {\n  if (phone.length === 10) {\n    // Adicionar DDI e 9º dígito\n    phone = '55' + phone.substring(0, 2) + '9' + phone.substring(2);\n  } else if (phone.length === 11) {\n    // Adicionar apenas DDI\n    phone = '55' + phone;\n  }\n}\n\n// 💬 Criar mensagem\nlet message = data.message || '';\n\nif (!message) {\n  const userName = user.name || 'Usuário';\n  \n  if (type === 'appointment_reminder' && data.appointment) {\n    const apt = data.appointment;\n    const date = new Date(apt.date).toLocaleDateString('pt-BR');\n    const time = new Date(apt.date).toLocaleTimeString('pt-BR', {hour: '2-digit', minute: '2-digit'});\n    \n    message = `🗓️ *Lembrete de Compromisso*\\n\\n` +\n             `Olá ${userName}!\\n\\n` +\n             `📅 ${apt.title}\\n` +\n             `🕐 ${date} às ${time}\\n`;\n    \n    if (apt.location) message += `📍 ${apt.location}\\n`;\n    message += `\\n💡 *PoupeJá*`;\n    \n  } else if (type === 'transaction_reminder' && data.transaction) {\n    const txn = data.transaction;\n    const date = new Date(txn.due_date || txn.date).toLocaleDateString('pt-BR');\n    const amount = txn.amount ? `R$ ${Number(txn.amount).toFixed(2)}` : '';\n    \n    message = `💰 *Lembrete Financeiro*\\n\\n` +\n             `Olá ${userName}!\\n\\n` +\n             `📝 ${txn.title}\\n` +\n             `💵 ${amount}\\n` +\n             `📅 ${date}\\n` +\n             `\\n💡 *PoupeJá*`;\n  } else {\n    message = `Olá ${userName}!\\n\\nVocê tem uma nova notificação.\\n\\n💡 *PoupeJá*`;\n  }\n}\n\nreturn [{\n  json: {\n    phone: phone,\n    message: message,\n    evolutionUrl: EVOLUTION_API_URL,\n    evolutionKey: EVOLUTION_API_KEY,\n    evolutionInstance: EVOLUTION_INSTANCE,\n    originalData: data\n  }\n}];"
+      },
+      "id": "process-node",
+      "name": "⚙️ Processar Dados",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [460, 300]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{ $json.phone }}",
+              "operation": "isNotEmpty"
+            },
+            {
+              "value1": "={{ $json.phone.length }}",
+              "operation": "largerEqual",
+              "value2": "13"
+            }
+          ]
+        }
+      },
+      "id": "validate-node",
+      "name": "✅ Validar Telefone",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [680, 300]
+    },
+    {
+      "parameters": {
+        "url": "={{ $json.evolutionUrl }}/message/sendText/{{ $json.evolutionInstance }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"number\": \"{{ $json.phone }}\",\n  \"textMessage\": {\n    \"text\": \"{{ $json.message }}\"\n  }\n}",
+        "options": {
+          "timeout": 10000
+        },
+        "sendHeaders": true,
+        "specifyHeaders": "json",
+        "jsonHeaders": "={\n  \"apikey\": \"{{ $json.evolutionKey }}\",\n  \"Content-Type\": \"application/json\"\n}"
+      },
+      "id": "send-node",
+      "name": "📤 Enviar WhatsApp",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [900, 200]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={\n  \"success\": true,\n  \"message\": \"Mensagem WhatsApp enviada com sucesso! ✅\",\n  \"phone\": \"{{ $json.phone }}\",\n  \"timestamp\": \"{{ new Date().toISOString() }}\"\n}",
+        "options": {}
+      },
+      "id": "success-node", 
+      "name": "✅ Sucesso",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [1120, 200]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={\n  \"success\": false,\n  \"error\": \"Telefone inválido ou vazio ❌\",\n  \"phone\": \"{{ $json.phone || 'vazio' }}\",\n  \"timestamp\": \"{{ new Date().toISOString() }}\"\n}",
+        "options": {
+          "responseCode": 400
+        }
+      },
+      "id": "error-phone-node",
+      "name": "❌ Telefone Inválido",
+      "type": "n8n-nodes-base.respondToWebhook", 
+      "typeVersion": 1,
+      "position": [900, 400]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={\n  \"success\": false,\n  \"error\": \"Falha ao enviar mensagem WhatsApp ❌\",\n  \"details\": \"Verifique se Evolution API está funcionando\",\n  \"timestamp\": \"{{ new Date().toISOString() }}\"\n}",
+        "options": {
+          "responseCode": 500
+        }
+      },
+      "id": "error-send-node",
+      "name": "❌ Erro de Envio",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [1120, 400]
+    }
+  ],
+  "connections": {
+    "📥 Receber Notificação": {
+      "main": [
+        [
+          {
+            "node": "⚙️ Processar Dados",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "⚙️ Processar Dados": {
+      "main": [
+        [
+          {
+            "node": "✅ Validar Telefone",
+            "type": "main", 
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "✅ Validar Telefone": {
+      "main": [
+        [
+          {
+            "node": "📤 Enviar WhatsApp",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "❌ Telefone Inválido",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "📤 Enviar WhatsApp": {
+      "main": [
+        [
+          {
+            "node": "✅ Sucesso", 
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ],
+      "error": [
+        [
+          {
+            "node": "❌ Erro de Envio",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {},
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "tags": [
+    {
+      "createdAt": "2025-01-27T10:00:00.000Z",
+      "updatedAt": "2025-01-27T10:00:00.000Z", 
+      "id": "poupeja-simple",
+      "name": "PoupeJá Simples"
+    }
+  ],
+  "triggerCount": 1,
+  "updatedAt": "2025-01-27T10:00:00.000Z"
+}
