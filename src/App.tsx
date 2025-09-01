@@ -18,21 +18,21 @@ function App() {
       <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
         <BrandingProvider>
           <PreferencesProvider>
-            <SubscriptionProvider>
-              <AppProvider>
-              <SupabaseInitializer>
-                <BrowserRouter>
-                  <Routes>
-                    <Route path="/" element={<div>Home</div>} />
-                    <Route path="/dashboard" element={<Index />} />
-                    <Route path="/appointments" element={<AppointmentsPageSimple />} />
-                    <Route path="*" element={<div>Página não encontrada</div>} />
-                  </Routes>
-                </BrowserRouter>
-              </SupabaseInitializer>
-            </AppProvider>
-          </SubscriptionProvider>
-        </PreferencesProvider>
+            <SupabaseInitializer>
+              <SubscriptionProvider>
+                <AppProvider>
+                  <BrowserRouter>
+                    <Routes>
+                      <Route path="/" element={<div>Home</div>} />
+                      <Route path="/dashboard" element={<Index />} />
+                      <Route path="/appointments" element={<AppointmentsPageSimple />} />
+                      <Route path="*" element={<div>Página não encontrada</div>} />
+                    </Routes>
+                  </BrowserRouter>
+                </AppProvider>
+              </SubscriptionProvider>
+            </SupabaseInitializer>
+          </PreferencesProvider>
         </BrandingProvider>
       </ThemeProvider>
     </QueryClientProvider>
