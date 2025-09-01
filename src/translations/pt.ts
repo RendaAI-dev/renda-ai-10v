@@ -69,6 +69,7 @@ export default {
     expenses: "Despesas",
     budgets: "Orçamentos",
     plans: "Planos",
+    appointments: "Compromissos",
   },
   auth: {
     login: "Entrar",
