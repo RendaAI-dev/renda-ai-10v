@@ -54,6 +54,7 @@ function App() {
                         <Route path="/schedule" element={<SchedulePage />} />
                          <Route path="/appointments" element={<AppointmentsPage />} />
                          <Route path="/settings" element={<SettingsPage />} />
+                         <Route path="/settings/whatsapp" element={<SettingsPage />} />
                          <Route path="/profile" element={<ProfilePage />} />
                          <Route path="/plans" element={<PlansPage />} />
                          <Route path="/admin" element={<AdminDashboard />} />

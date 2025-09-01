@@ -2,13 +2,14 @@
 import React from 'react';
 import { NavLink, useNavigate, useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import { useAppContext } from '@/contexts/AppContext';
 import { usePreferences } from '@/contexts/PreferencesContext';
 import { useUserRole } from '@/hooks/useUserRole';
 import { BrandLogo } from '@/components/common/BrandLogo';
 import { ThemeToggle } from '@/components/theme/ThemeToggle';
-import { LayoutDashboard, Receipt, BarChart3, Target, User, Settings, FolderOpen, Calendar, CalendarCheck, Crown, LogOut, Shield, DollarSign } from 'lucide-react';
+import { LayoutDashboard, Receipt, BarChart3, Target, User, Settings, FolderOpen, Calendar, CalendarCheck, Crown, LogOut, Shield, DollarSign, MessageSquare } from 'lucide-react';
 
 interface SidebarProps {
   onProfileClick?: () => void;
@@ -146,6 +147,12 @@ const Sidebar: React.FC<SidebarProps> = ({ onProfileClick, onConfigClick }) => {
       href: '/reports'
     },
     {
+      icon: MessageSquare,
+      label: 'WhatsApp',
+      href: '/settings/whatsapp',
+      badge: 'novo'
+    },
+    {
       icon: Crown,
       label: t('nav.plans'),
       href: '/plans'
@@ -203,7 +210,12 @@ const Sidebar: React.FC<SidebarProps> = ({ onProfileClick, onConfigClick }) => {
               }
             >
               <item.icon className="h-5 w-5" />
-              {item.label}
+              <span className="flex-1">{item.label}</span>
+              {item.badge && (
+                <Badge variant={item.badge as any} className="text-xs px-2 py-0.5">
+                  {item.badge}
+                </Badge>
+              )}
             </NavLink>
           ))}
         </nav>
