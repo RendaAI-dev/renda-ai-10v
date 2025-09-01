@@ -80,23 +80,27 @@ serve(async (req) => {
 
     // Format phone number (remove special characters, add country code if needed)
     let formattedPhone = phoneNumber.replace(/\D/g, '');
-    if (formattedPhone.startsWith('55')) {
-      formattedPhone = formattedPhone;
-    } else if (formattedPhone.length === 11) {
-      formattedPhone = '55' + formattedPhone;
-    } else if (formattedPhone.length === 10) {
-      formattedPhone = '55' + formattedPhone;
+    if (!formattedPhone.startsWith('55')) {
+      if (formattedPhone.length === 11) {
+        formattedPhone = '55' + formattedPhone;
+      } else if (formattedPhone.length === 10) {
+        formattedPhone = '55' + formattedPhone;
+      }
     }
 
+    console.log('Formatted phone:', formattedPhone);
+
     // Get Evolution API configuration
-    const { data: evolutionConfig } = await supabaseClient
+    const { data: evolutionConfig, error: configError } = await supabaseClient
       .from('poupeja_evolution_config')
       .select('*')
       .eq('is_active', true)
       .single();
 
-    if (!evolutionConfig) {
-      throw new Error('Evolution API não configurada');
+    console.log('Evolution config:', evolutionConfig, 'Error:', configError);
+
+    if (!evolutionConfig || configError) {
+      throw new Error(`Evolution API não configurada: ${configError?.message || 'Nenhuma configuração ativa encontrada'}`);
     }
 
     // Prepare message for Evolution API
@@ -109,69 +113,80 @@ serve(async (req) => {
 
     console.log('Sending to Evolution API:', {
       url: `${evolutionConfig.api_url}/message/sendText/${evolutionConfig.instance_name}`,
-      phone: formattedPhone
+      phone: formattedPhone,
+      payload: messagePayload
     });
 
-    // Send message through Evolution API
-    const evolutionResponse = await fetch(
-      `${evolutionConfig.api_url}/message/sendText/${evolutionConfig.instance_name}`,
-      {
-        method: 'POST',
-        headers: {
-          'apikey': evolutionConfig.api_key,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(messagePayload),
-      }
-    );
-
-    if (!evolutionResponse.ok) {
-      const errorText = await evolutionResponse.text();
-      console.error('Evolution API error:', evolutionResponse.status, errorText);
-      throw new Error(`Erro na Evolution API: ${evolutionResponse.status} - ${errorText}`);
-    }
-
-    const evolutionResult = await evolutionResponse.json();
-    console.log('Evolution API response:', evolutionResult);
-
-    const messageId = evolutionResult.key?.id || crypto.randomUUID();
-    const sentAt = new Date().toISOString();
-
-    // Log the notification attempt
-    const { error: logError } = await supabaseClient
-      .from('poupeja_notification_logs')
-      .insert({
-        user_id: user.id,
-        appointment_id: appointmentId,
-        notification_type: 'manual',
-        channel: 'whatsapp',
-        recipient: formattedPhone,
-        message_content: message,
-        message_id: messageId,
-        status: 'sent',
-        sent_at: sentAt,
-        metadata: {
-          evolution_response: evolutionResult,
-          phone_formatted: formattedPhone
+    try {
+      // Send message through Evolution API
+      const evolutionResponse = await fetch(
+        `${evolutionConfig.api_url}/message/sendText/${evolutionConfig.instance_name}`,
+        {
+          method: 'POST',
+          headers: {
+            'apikey': evolutionConfig.api_key,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(messagePayload),
         }
-      });
+      );
 
-    if (logError) {
-      console.error('Error logging notification:', logError);
-    }
+      console.log('Evolution response status:', evolutionResponse.status);
 
-    return new Response(
-      JSON.stringify({
-        success: true,
-        messageId,
-        status: 'sent',
-        timestamp: sentAt,
-        evolutionResponse: evolutionResult
-      }),
-      {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      if (!evolutionResponse.ok) {
+        const errorText = await evolutionResponse.text();
+        console.error('Evolution API error:', evolutionResponse.status, errorText);
+        throw new Error(`Erro na Evolution API: ${evolutionResponse.status} - ${errorText}`);
       }
-    );
+
+      const evolutionResult = await evolutionResponse.json();
+      console.log('Evolution API response:', evolutionResult);
+
+      const messageId = evolutionResult.key?.id || crypto.randomUUID();
+      const sentAt = new Date().toISOString();
+
+      // Log the notification attempt
+      const { error: logError } = await supabaseClient
+        .from('poupeja_notification_logs')
+        .insert({
+          user_id: user.id,
+          appointment_id: appointmentId,
+          notification_type: requestBody.notification_type || 'manual',
+          channel: 'whatsapp',
+          recipient: formattedPhone,
+          message_content: message,
+          message_id: messageId,
+          status: 'sent',
+          sent_at: sentAt,
+          metadata: {
+            evolution_response: evolutionResult,
+            phone_formatted: formattedPhone,
+            original_phone: phoneNumber
+          }
+        });
+
+      if (logError) {
+        console.error('Error logging notification:', logError);
+      }
+
+      return new Response(
+        JSON.stringify({
+          success: true,
+          messageId,
+          status: 'sent',
+          timestamp: sentAt,
+          evolutionResponse: evolutionResult,
+          formattedPhone
+        }),
+        {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        }
+      );
+
+    } catch (fetchError) {
+      console.error('Fetch error:', fetchError);
+      throw new Error(`Erro ao conectar com Evolution API: ${fetchError.message}`);
+    }
 
   } catch (error) {
     console.error('Error in send-whatsapp-notification function:', error);
