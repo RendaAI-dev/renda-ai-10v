@@ -8,9 +8,13 @@ const corsHeaders = {
 };
 
 interface WhatsAppRequest {
-  phoneNumber: string;
-  message: string;
+  recipient_number?: string;
+  phoneNumber?: string;
+  message_content?: string;
+  message?: string;
   appointmentId?: string;
+  notification_type?: string;
+  channel?: string;
 }
 
 serve(async (req) => {
@@ -41,11 +45,25 @@ serve(async (req) => {
       throw new Error('User not authenticated');
     }
 
-    const { phoneNumber, message, appointmentId }: WhatsAppRequest = await req.json();
+    const requestBody: WhatsAppRequest = await req.json();
+    
+    // Support both field naming conventions
+    const phoneNumber = requestBody.recipient_number || requestBody.phoneNumber;
+    const message = requestBody.message_content || requestBody.message;
+    const appointmentId = requestBody.appointmentId;
+
+    console.log('Request body received:', requestBody);
 
     if (!phoneNumber || !message) {
       return new Response(
-        JSON.stringify({ error: 'Phone number and message are required' }),
+        JSON.stringify({ 
+          error: 'Phone number and message are required',
+          received: {
+            phoneNumber: !!phoneNumber,
+            message: !!message,
+            requestBody
+          }
+        }),
         {
           status: 400,
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
