@@ -20,8 +20,8 @@ const WhatsAppConfigManager: React.FC = () => {
     n8n_webhook_url: 'https://n8n-webhook.rendaai.com.br/webhook/renda',
     test_phone: '+5537998743075',
   });
-  const [isLoading, setIsLoading] = useState(false);
-  const [isTesting, setIsTesting] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isTesting, setIsTesting] = useState(true);
 
   useEffect(() => {
     fetchConfig();
