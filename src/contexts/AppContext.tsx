@@ -2,7 +2,7 @@ import React, { createContext, useContext, useReducer, useEffect, ReactNode, use
 import { supabase } from '@/integrations/supabase/client';
 import { Transaction, Goal, ScheduledTransaction } from '@/types';
 import { setupAuthListener, getCurrentSession } from '@/services/authService';
-import { recalculateGoalAmounts as recalculateGoalAmountsService } from '@/services/goalService';
+import { recalculateGoalAmounts as recalculateGoalAmountsService, deleteGoal as deleteGoalService } from '@/services/goalService';
 
 // Use database types directly from Supabase
 interface Category {
@@ -825,13 +825,14 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
 
   const deleteGoal = async (id: string) => {
     try {
-      const { error } = await supabase
-        .from('poupeja_goals')
-        .delete()
-        .eq('id', id);
-  
-      if (error) throw error;
-      dispatch({ type: 'DELETE_GOAL', payload: id });
+      const success = await deleteGoalService(id);
+      if (success) {
+        dispatch({ type: 'DELETE_GOAL', payload: id });
+        // Refresh transactions to update any that were linked to this goal
+        await getTransactions();
+      } else {
+        throw new Error('Failed to delete goal');
+      }
     } catch (error) {
       console.error('Error deleting goal:', error);
       throw error;
