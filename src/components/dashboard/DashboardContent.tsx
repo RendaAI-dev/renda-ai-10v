@@ -7,6 +7,7 @@ import TransactionList from '@/components/common/TransactionList';
 import UpcomingExpensesAlert from '@/components/dashboard/UpcomingExpensesAlert';
 import GoalNavigation from '@/components/common/GoalNavigation';
 import DashboardCharts from '@/components/dashboard/DashboardCharts';
+import BalanceGoalsConnection from '@/components/dashboard/BalanceGoalsConnection';
 import { usePreferences } from '@/contexts/PreferencesContext';
 import { Goal, ScheduledTransaction } from '@/types';
 import { motion } from 'framer-motion';
@@ -18,6 +19,7 @@ interface DashboardContentProps {
   currentGoalIndex: number;
   currentMonth: Date;
   hideValues: boolean;
+  totalBalance: number;
   onGoalChange: (index: number) => void;
   onEditTransaction: (transaction: any) => void;
   onDeleteTransaction: (id: string) => void;
@@ -31,6 +33,7 @@ const DashboardContent: React.FC<DashboardContentProps> = ({
   currentGoalIndex,
   currentMonth,
   hideValues,
+  totalBalance,
   onGoalChange,
   onEditTransaction,
   onDeleteTransaction,
@@ -62,6 +65,15 @@ const DashboardContent: React.FC<DashboardContentProps> = ({
       {/* Progresso das metas */}
       <motion.div variants={itemVariants}>
         <GoalNavigation goals={goals} currentGoalIndex={currentGoalIndex} onGoalChange={onGoalChange} />
+      </motion.div>
+
+      {/* Conexão entre Saldo e Metas */}
+      <motion.div variants={itemVariants}>
+        <BalanceGoalsConnection 
+          totalBalance={totalBalance}
+          goals={goals}
+          hideValues={hideValues}
+        />
       </motion.div>
 
       {/* Seção de gráficos */}

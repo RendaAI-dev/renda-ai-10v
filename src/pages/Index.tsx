@@ -210,6 +210,7 @@ const Index = () => {
             currentGoalIndex={currentGoalIndex}
             currentMonth={currentMonth}
             hideValues={hideValues}
+            totalBalance={balance}
             onGoalChange={setCurrentGoalIndex}
             onEditTransaction={handleEditTransaction}
             onDeleteTransaction={handleDeleteTransaction}

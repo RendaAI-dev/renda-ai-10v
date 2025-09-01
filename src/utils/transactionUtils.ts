@@ -314,3 +314,35 @@ export const calculateCategorySummaries = (
     color: colors[index % colors.length],
   }));
 };
+
+// NEW: Calculate balance and goals relationship
+export const calculateBalanceGoalsData = (
+  totalBalance: number,
+  goals: any[]
+) => {
+  // Calculate total amount allocated to goals (current amounts)
+  const totalGoalsAmount = goals.reduce((sum, goal) => sum + (goal.currentAmount || 0), 0);
+  
+  // Calculate total target amount for all goals
+  const totalGoalsTarget = goals.reduce((sum, goal) => sum + (goal.targetAmount || 0), 0);
+  
+  // Available balance = total balance - amount already allocated to goals
+  const availableBalance = Math.max(0, totalBalance - totalGoalsAmount);
+  
+  // Committed balance = amount already saved for goals
+  const committedBalance = Math.min(totalBalance, totalGoalsAmount);
+  
+  // Progress percentage towards all goals combined
+  const overallGoalsProgress = totalGoalsTarget > 0 ? 
+    Math.round((totalGoalsAmount / totalGoalsTarget) * 100) : 0;
+  
+  return {
+    totalBalance,
+    availableBalance,
+    committedBalance,
+    totalGoalsAmount,
+    totalGoalsTarget,
+    overallGoalsProgress,
+    balanceAfterGoals: totalBalance - totalGoalsTarget // What balance would be if all goals are met
+  };
+};

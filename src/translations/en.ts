@@ -282,6 +282,13 @@ const en = {
     noGoalsYet: "No goals yet! Let's create one!",
     createFirstGoal: "Create your first goal",
     addFirstTransaction: "Add your first transaction",
+    balanceConnection: 'Balance & Goals',
+    availableBalance: 'Available Balance',
+    committedBalance: 'Reserved for Goals',
+    overallProgress: 'Overall Progress',
+    committed: 'Reserved',
+    of: 'of',
+    progress: 'Goal Progress'
   },
   profile: {
     title: "Profile",
