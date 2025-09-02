@@ -4,8 +4,7 @@ import { NavLink, useNavigate, useLocation } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 import { usePreferences } from '@/contexts/PreferencesContext';
 import { useUserRole } from '@/hooks/useUserRole';
-import { Badge } from '@/components/ui/badge';
-import { LayoutDashboard, Receipt, Settings, Crown, Plus, Target, Calendar, Shield, User, FileText, Tag, MessageSquare } from 'lucide-react';
+import { LayoutDashboard, Receipt, Settings, Crown, Plus, Target, Calendar, Shield, User, FileText, Tag } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Button } from '@/components/ui/button';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -76,16 +75,6 @@ const MobileNavBar: React.FC<MobileNavBarProps> = ({
       },
       color: 'text-indigo-600',
       bgColor: 'bg-indigo-50 hover:bg-indigo-100'
-    },
-    {
-      icon: MessageSquare,
-      label: 'WhatsApp',
-      action: () => {
-        navigate('/settings/whatsapp');
-        setIsQuickActionsOpen(false);
-      },
-      color: 'text-green-600',
-      bgColor: 'bg-green-50 hover:bg-green-100'
     }
   ];
 
@@ -145,12 +134,6 @@ const MobileNavBar: React.FC<MobileNavBarProps> = ({
       icon: Plus,
       label: '',
       href: '#'
-    },
-    {
-      icon: MessageSquare,
-      label: 'WhatsApp',
-      href: '/settings/whatsapp',
-      badge: 'novo'
     },
     {
       icon: Crown,
@@ -251,14 +234,9 @@ const MobileNavBar: React.FC<MobileNavBarProps> = ({
           return (
             <NavLink key={item.href} to={item.href} className={({
               isActive
-            }) => cn("flex flex-col items-center gap-1 px-3 py-2 rounded-lg text-xs font-medium transition-colors relative", "hover:bg-accent hover:text-accent-foreground min-w-0", isActive ? "text-primary bg-primary/10" : "text-muted-foreground")}>
+            }) => cn("flex flex-col items-center gap-1 px-3 py-2 rounded-lg text-xs font-medium transition-colors", "hover:bg-accent hover:text-accent-foreground min-w-0", isActive ? "text-primary bg-primary/10" : "text-muted-foreground")}>
               <item.icon className="h-5 w-5 flex-shrink-0" />
               <span className="truncate">{item.label}</span>
-              {item.badge && (
-                <Badge variant={item.badge as any} className="absolute -top-1 -right-1 text-xs px-1 py-0 min-w-[16px] h-4">
-                  {item.badge}
-                </Badge>
-              )}
             </NavLink>
           );
         })}

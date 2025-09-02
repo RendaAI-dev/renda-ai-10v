@@ -51,7 +51,6 @@ const en = {
     categories: "Categories",
     expenses: "Expenses",
     plans: "Plans",
-    appointments: "Appointments",
   },
   plans: {
     title: "Subscription Plans",
