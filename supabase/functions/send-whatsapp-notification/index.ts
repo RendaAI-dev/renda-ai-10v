@@ -106,9 +106,7 @@ serve(async (req) => {
     // Prepare message for Evolution API
     const messagePayload = {
       number: formattedPhone,
-      textMessage: {
-        text: message
-      }
+      text: message
     };
 
     console.log('Sending to Evolution API:', {
