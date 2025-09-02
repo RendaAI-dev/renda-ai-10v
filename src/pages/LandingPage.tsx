@@ -45,10 +45,18 @@ const LandingPage = () => {
       }
     };
 
+    // Timeout de segurança para evitar loading infinito
+    const timeoutId = setTimeout(() => {
+      console.log('Timeout: Forçando carregamento da landing page...');
+      setIsThemeLoaded(true);
+    }, 3000); // 3 segundos máximo
+
     loadAndApplyLandingTheme();
     
     // Cleanup: restaurar tema do sistema quando sair da landing
     return () => {
+      clearTimeout(timeoutId);
+      
       if (forcedTheme && forcedTheme !== 'system') {
         const root = document.documentElement;
         root.classList.remove('light', 'dark');
@@ -66,12 +74,25 @@ const LandingPage = () => {
     };
   }, [lastUpdated]); // Reagir a mudanças no branding
 
-  // Mostrar um loading mínimo enquanto carrega o tema para evitar flash
-  if (!isThemeLoaded || brandingLoading) {
+  // Timeout adicional para o branding loading
+  useEffect(() => {
+    if (brandingLoading) {
+      const brandingTimeoutId = setTimeout(() => {
+        console.log('Timeout do branding: Continuando sem branding completo...');
+        // Força o componente a renderizar mesmo se o branding ainda estiver carregando
+        setIsThemeLoaded(true);
+      }, 2000);
+
+      return () => clearTimeout(brandingTimeoutId);
+    }
+  }, [brandingLoading]);
+
+  // Reduzir o tempo de loading e adicionar fallback mais agressivo
+  if ((!isThemeLoaded || brandingLoading) && isThemeLoaded !== null) {
     return (
-      <div className="min-h-screen w-full bg-gradient-to-br from-background via-muted/20 to-background flex items-center justify-center">
+      <div className="min-h-screen w-full bg-gradient-to-br from-slate-50 via-white to-slate-50 dark:from-slate-900 dark:via-slate-800 dark:to-slate-900 flex items-center justify-center">
         <div className="animate-pulse">
-          <div className="h-8 w-32 bg-muted rounded"></div>
+          <div className="h-8 w-32 bg-slate-200 dark:bg-slate-700 rounded"></div>
         </div>
       </div>
     );
