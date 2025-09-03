@@ -730,6 +730,10 @@ export type Database = {
         Args: { p_user_id?: string }
         Returns: boolean
       }
+      maintain_appointments: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
       migrate_existing_auth_users: {
         Args: Record<PropertyKey, never>
         Returns: undefined
