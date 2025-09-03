@@ -30,6 +30,36 @@ export async function handleCheckoutSessionCompleted(
   const userId = poupejaUser.id;
   console.log("Processing subscription for verified user");
 
+  // Check for existing active subscription before processing the new one
+  const { data: existingSubscriptions } = await supabase
+    .from('poupeja_subscriptions')
+    .select('stripe_subscription_id, status')
+    .eq('user_id', userId)
+    .neq('stripe_subscription_id', session.subscription);
+
+  if (existingSubscriptions && existingSubscriptions.length > 0) {
+    console.log(`Found ${existingSubscriptions.length} existing subscriptions for user ${userId}`);
+    
+    // Cancel old subscriptions in Stripe
+    for (const oldSub of existingSubscriptions) {
+      if (oldSub.status === 'active') {
+        try {
+          await stripe.subscriptions.cancel(oldSub.stripe_subscription_id);
+          console.log(`Canceled old subscription in Stripe: ${oldSub.stripe_subscription_id}`);
+          
+          // Update status in database
+          await supabase
+            .from('poupeja_subscriptions')
+            .update({ status: 'canceled', cancel_at_period_end: false })
+            .eq('stripe_subscription_id', oldSub.stripe_subscription_id);
+        } catch (cancelError) {
+          console.error(`Failed to cancel old subscription ${oldSub.stripe_subscription_id}:`, cancelError);
+          // Don't throw here, continue with new subscription creation
+        }
+      }
+    }
+  }
+
   const subscription = await stripe.subscriptions.retrieve(session.subscription);
   
   // Map the new price IDs to plan types using the edge function config
@@ -70,7 +100,14 @@ export async function handleCheckoutSessionCompleted(
   // Use actual subscription status from Stripe instead of assuming "active"
   const subscriptionStatus = subscription.status; // This could be: incomplete, incomplete_expired, trialing, active, past_due, canceled, or unpaid
 
-  await supabase.from("poupeja_subscriptions").upsert({
+  // Delete any existing subscriptions for this user before inserting the new one
+  await supabase
+    .from("poupeja_subscriptions")
+    .delete()
+    .eq('user_id', userId);
+
+  // Insert the new subscription
+  const { error: insertError } = await supabase.from("poupeja_subscriptions").insert({
     user_id: userId,
     stripe_customer_id: session.customer,
     stripe_subscription_id: session.subscription,
@@ -80,6 +117,11 @@ export async function handleCheckoutSessionCompleted(
     current_period_end: new Date(subscription.current_period_end * 1000).toISOString(),
     cancel_at_period_end: subscription.cancel_at_period_end
   });
+
+  if (insertError) {
+    console.error("Failed to insert subscription:", insertError);
+    throw new Error(`Failed to create subscription record: ${insertError.message}`);
+  }
 
   console.log(`Subscription created/updated with plan ${planType} and status ${subscriptionStatus}`);
 }

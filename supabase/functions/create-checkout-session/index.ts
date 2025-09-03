@@ -197,6 +197,30 @@ serve(async (req) => {
     
     logStep("Stripe initialized successfully");
     
+    // Check if user already has an active subscription
+    const { data: existingSubscriptions } = await supabaseClient
+      .from("poupeja_subscriptions")
+      .select("stripe_subscription_id, status, plan_type")
+      .eq("user_id", user.id)
+      .eq("status", "active");
+
+    if (existingSubscriptions && existingSubscriptions.length > 0) {
+      logStep("Found existing active subscriptions", { count: existingSubscriptions.length });
+      
+      // Cancel existing active subscriptions in Stripe before creating new one
+      for (const existingSub of existingSubscriptions) {
+        try {
+          await stripe.subscriptions.cancel(existingSub.stripe_subscription_id);
+          logStep("Canceled existing subscription", { subscriptionId: existingSub.stripe_subscription_id });
+        } catch (cancelError) {
+          logStep("Warning: Could not cancel existing subscription", { 
+            subscriptionId: existingSub.stripe_subscription_id,
+            error: cancelError.message 
+          });
+        }
+      }
+    }
+
     // Check if user already has a customer ID
     const { data: customerData } = await supabaseClient
       .from("poupeja_customers")

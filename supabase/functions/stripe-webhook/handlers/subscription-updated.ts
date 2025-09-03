@@ -118,10 +118,43 @@ export async function handleSubscriptionUpdated(
       }
     }
     
-    // Use UPSERT instead of UPDATE to ensure record is created/updated
+    // Check for multiple subscriptions for the same user
+    const { data: existingSubscriptions } = await supabase
+      .from("poupeja_subscriptions")
+      .select('stripe_subscription_id, status, created_at')
+      .eq('user_id', verifiedUserId)
+      .order('created_at', { ascending: false });
+
+    if (existingSubscriptions && existingSubscriptions.length > 1) {
+      console.log(`Found ${existingSubscriptions.length} subscriptions for user ${verifiedUserId}`);
+      
+      // Keep only the most recent subscription, cancel others in Stripe
+      const mostRecent = existingSubscriptions[0];
+      const oldSubscriptions = existingSubscriptions.slice(1);
+      
+      for (const oldSub of oldSubscriptions) {
+        if (oldSub.stripe_subscription_id !== subscription.id && oldSub.status === 'active') {
+          try {
+            await stripe.subscriptions.cancel(oldSub.stripe_subscription_id);
+            console.log(`Canceled old subscription in Stripe: ${oldSub.stripe_subscription_id}`);
+          } catch (cancelError) {
+            console.error(`Failed to cancel old subscription ${oldSub.stripe_subscription_id}:`, cancelError);
+          }
+        }
+      }
+      
+      // Delete old subscription records from database
+      await supabase
+        .from("poupeja_subscriptions")
+        .delete()
+        .eq('user_id', verifiedUserId)
+        .neq('stripe_subscription_id', subscription.id);
+    }
+
+    // Use UPSERT to update or insert the subscription
     const upsertResult = await supabase.from("poupeja_subscriptions")
       .upsert(subscriptionData, { 
-        onConflict: 'user_id',
+        onConflict: 'stripe_subscription_id',
         ignoreDuplicates: false 
       });
     
