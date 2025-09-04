@@ -20,6 +20,8 @@ const StripeConfigManager: React.FC = () => {
     stripeWebhookSecret: '',
     stripePriceIdMonthly: '',
     stripePriceIdAnnual: '',
+    stripePriceIdMonthlyPro: '',
+    stripePriceIdAnnualPro: '',
   });
 
   useEffect(() => {
@@ -43,6 +45,8 @@ const StripeConfigManager: React.FC = () => {
             stripeWebhookSecret: stripeSettings.stripe_webhook_secret?.value || '',
             stripePriceIdMonthly: stripeSettings.stripe_price_id_monthly?.value || '',
             stripePriceIdAnnual: stripeSettings.stripe_price_id_annual?.value || '',
+            stripePriceIdMonthlyPro: stripeSettings.stripe_price_id_monthly_pro?.value || '',
+            stripePriceIdAnnualPro: stripeSettings.stripe_price_id_annual_pro?.value || '',
           });
         }
       } catch (err) {
@@ -76,6 +80,8 @@ const StripeConfigManager: React.FC = () => {
             stripe_webhook_secret: formData.stripeWebhookSecret,
             stripe_price_id_monthly: formData.stripePriceIdMonthly,
             stripe_price_id_annual: formData.stripePriceIdAnnual,
+            stripe_price_id_monthly_pro: formData.stripePriceIdMonthlyPro,
+            stripe_price_id_annual_pro: formData.stripePriceIdAnnualPro,
           }
         }
       });
@@ -197,39 +203,77 @@ const StripeConfigManager: React.FC = () => {
             </div>
           </div>
 
-          <div className="space-y-4">
+          <div className="space-y-6">
             <h3 className="text-lg font-semibold flex items-center gap-2">
               <Webhook className="h-5 w-5" />
               Price IDs dos Produtos
             </h3>
             
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="stripePriceIdMonthly">Price ID Plano Mensal</Label>
-                <Input
-                  id="stripePriceIdMonthly"
-                  value={formData.stripePriceIdMonthly}
-                  onChange={(e) => handleInputChange('stripePriceIdMonthly', e.target.value)}
-                  placeholder="price_..."
-                  disabled={isUpdating}
-                />
-                <p className="text-xs text-gray-500">
-                  ID do preço do plano mensal no Stripe
-                </p>
-              </div>
+            {/* Basic Plans */}
+            <div className="border border-blue-200 rounded-lg p-4">
+              <h4 className="font-medium text-blue-800 mb-3">Planos Basic</h4>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="stripePriceIdMonthly">Price ID Mensal Basic</Label>
+                  <Input
+                    id="stripePriceIdMonthly"
+                    value={formData.stripePriceIdMonthly}
+                    onChange={(e) => handleInputChange('stripePriceIdMonthly', e.target.value)}
+                    placeholder="price_..."
+                    disabled={isUpdating}
+                  />
+                  <p className="text-xs text-gray-500">
+                    ID do preço do plano mensal basic no Stripe
+                  </p>
+                </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="stripePriceIdAnnual">Price ID Plano Anual</Label>
-                <Input
-                  id="stripePriceIdAnnual"
-                  value={formData.stripePriceIdAnnual}
-                  onChange={(e) => handleInputChange('stripePriceIdAnnual', e.target.value)}
-                  placeholder="price_..."
-                  disabled={isUpdating}
-                />
-                <p className="text-xs text-gray-500">
-                  ID do preço do plano anual no Stripe
-                </p>
+                <div className="space-y-2">
+                  <Label htmlFor="stripePriceIdAnnual">Price ID Anual Basic</Label>
+                  <Input
+                    id="stripePriceIdAnnual"
+                    value={formData.stripePriceIdAnnual}
+                    onChange={(e) => handleInputChange('stripePriceIdAnnual', e.target.value)}
+                    placeholder="price_..."
+                    disabled={isUpdating}
+                  />
+                  <p className="text-xs text-gray-500">
+                    ID do preço do plano anual basic no Stripe
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* Pro Plans */}
+            <div className="border border-purple-200 rounded-lg p-4">
+              <h4 className="font-medium text-purple-800 mb-3">Planos Pro</h4>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="stripePriceIdMonthlyPro">Price ID Mensal Pro</Label>
+                  <Input
+                    id="stripePriceIdMonthlyPro"
+                    value={formData.stripePriceIdMonthlyPro}
+                    onChange={(e) => handleInputChange('stripePriceIdMonthlyPro', e.target.value)}
+                    placeholder="price_..."
+                    disabled={isUpdating}
+                  />
+                  <p className="text-xs text-gray-500">
+                    ID do preço do plano mensal pro no Stripe
+                  </p>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="stripePriceIdAnnualPro">Price ID Anual Pro</Label>
+                  <Input
+                    id="stripePriceIdAnnualPro"
+                    value={formData.stripePriceIdAnnualPro}
+                    onChange={(e) => handleInputChange('stripePriceIdAnnualPro', e.target.value)}
+                    placeholder="price_..."
+                    disabled={isUpdating}
+                  />
+                  <p className="text-xs text-gray-500">
+                    ID do preço do plano anual pro no Stripe
+                  </p>
+                </div>
               </div>
             </div>
           </div>

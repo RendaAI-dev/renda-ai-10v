@@ -1,12 +1,14 @@
 
 import React from 'react';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
-import { Palette, CreditCard, DollarSign, Phone, Database, Code, BarChart3 } from 'lucide-react';
+import { Palette, CreditCard, DollarSign, Phone, Database, Code, BarChart3, Bell, Users } from 'lucide-react';
 import BrandingConfigManager from './BrandingConfigManager';
 import StripeConfigManager from './StripeConfigManager';
 import PlanPricingManager from './PlanPricingManager';
 import ContactConfigManager from './ContactConfigManager';
 import SystemConfigManager from './SystemConfigManager';
+import ReminderControlManager from './ReminderControlManager';
+import SubscriptionManagementDashboard from './SubscriptionManagementDashboard';
 import { PWAManifestGenerator } from './PWAManifestGenerator';
 import { Tabs as NestedTabs, TabsList as NestedTabsList, TabsTrigger as NestedTabsTrigger, TabsContent as NestedTabsContent } from '@/components/ui/tabs';
 import AnalyticsOverview from './analytics/AnalyticsOverview';
@@ -17,7 +19,7 @@ import CustomersTable from './analytics/CustomersTable';
 const AdminSectionTabs: React.FC = () => {
   return (
     <Tabs defaultValue="system" className="w-full">
-      <TabsList className="grid w-full grid-cols-7">
+      <TabsList className="grid w-full grid-cols-9">
         <TabsTrigger value="system" className="flex items-center gap-2">
           <Database className="h-4 w-4" />
           Sistema
@@ -25,6 +27,14 @@ const AdminSectionTabs: React.FC = () => {
         <TabsTrigger value="analytics" className="flex items-center gap-2">
           <BarChart3 className="h-4 w-4" />
           Analytics
+        </TabsTrigger>
+        <TabsTrigger value="subscriptions" className="flex items-center gap-2">
+          <Users className="h-4 w-4" />
+          Assinaturas
+        </TabsTrigger>
+        <TabsTrigger value="reminders" className="flex items-center gap-2">
+          <Bell className="h-4 w-4" />
+          Lembretes
         </TabsTrigger>
         <TabsTrigger value="branding" className="flex items-center gap-2">
           <Palette className="h-4 w-4" />
@@ -73,6 +83,14 @@ const AdminSectionTabs: React.FC = () => {
             <CustomersTable />
           </NestedTabsContent>
         </NestedTabs>
+      </TabsContent>
+
+      <TabsContent value="subscriptions" className="mt-6">
+        <SubscriptionManagementDashboard />
+      </TabsContent>
+
+      <TabsContent value="reminders" className="mt-6">
+        <ReminderControlManager />
       </TabsContent>
 
       <TabsContent value="branding" className="mt-6">
