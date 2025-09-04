@@ -28,6 +28,11 @@ interface ReminderStats {
     basic: number;
     pro: number;
   };
+  currentMonth: string;
+  limits: {
+    basic: number;
+    pro: number;
+  };
 }
 
 const ReminderControlManager: React.FC = () => {
@@ -46,59 +51,33 @@ const ReminderControlManager: React.FC = () => {
     try {
       setIsLoading(true);
       
-      // Buscar estatísticas de lembretes
-      const { data: reminderData, error: reminderError } = await supabase
-        .from('poupeja_reminder_usage')
-        .select('*');
-
-      // Buscar distribuição de planos
-      const { data: subscriptionData, error: subscriptionError } = await supabase
-        .from('poupeja_subscriptions')
-        .select('plan_type, status')
-        .eq('status', 'active');
-
-      if (reminderError || subscriptionError) {
-        console.error('Erro ao carregar estatísticas:', { reminderError, subscriptionError });
+      const { data, error } = await supabase.functions.invoke('get-reminder-stats');
+      
+      if (error) {
+        console.error('Erro ao carregar estatísticas de lembretes:', error);
+        toast({
+          title: "Erro ao carregar dados",
+          description: "Não foi possível carregar as estatísticas de lembretes.",
+          variant: "destructive",
+        });
         return;
       }
 
-      // Processar dados
-      const basicUsers = subscriptionData?.filter(s => s.plan_type?.includes('monthly') && !s.plan_type?.includes('pro')).length || 0;
-      const proUsers = subscriptionData?.filter(s => s.plan_type?.includes('pro')).length || 0;
-      
-      const monthlyUsageBasic = reminderData?.filter(r => 
-        subscriptionData?.some(s => s.plan_type?.includes('monthly') && !s.plan_type?.includes('pro'))
-      ).reduce((sum, r) => sum + (r.reminders_used || 0), 0) || 0;
-
-      const monthlyUsagePro = reminderData?.filter(r => 
-        subscriptionData?.some(s => s.plan_type?.includes('pro'))
-      ).reduce((sum, r) => sum + (r.reminders_used || 0), 0) || 0;
-
-      setStats({
-        totalUsers: (subscriptionData?.length || 0),
-        activeReminders: (reminderData?.length || 0),
-        monthlyUsage: {
-          basic: monthlyUsageBasic,
-          pro: monthlyUsagePro,
-        },
-        planDistribution: {
-          basic: basicUsers,
-          pro: proUsers,
-        }
-      });
-
-      // Carregar limites globais das configurações
-      const { data: settingsData } = await supabase.functions.invoke('get-admin-settings');
-      if (settingsData?.success && settingsData?.settings?.pricing) {
-        const pricingSettings = settingsData.settings.pricing;
+      if (data?.success) {
+        setStats(data.data);
         setGlobalLimits({
-          basicLimit: String(pricingSettings.reminder_limit_basic?.value || '15'),
-          proLimit: String(pricingSettings.reminder_limit_pro?.value || '50'),
+          basicLimit: String(data.data.limits.basic),
+          proLimit: String(data.data.limits.pro),
         });
       }
 
     } catch (err) {
       console.error('Erro ao carregar estatísticas de lembretes:', err);
+      toast({
+        title: "Erro",
+        description: "Erro inesperado ao carregar estatísticas.",
+        variant: "destructive",
+      });
     } finally {
       setIsLoading(false);
     }
@@ -220,7 +199,7 @@ const ReminderControlManager: React.FC = () => {
             <div className="flex items-center gap-2">
               <Calendar className="h-5 w-5 text-orange-600" />
               <div>
-                <p className="text-2xl font-bold">{new Date().toLocaleDateString('pt-BR', { month: 'long' })}</p>
+                <p className="text-2xl font-bold">{stats?.currentMonth || new Date().toISOString().slice(0, 7)}</p>
                 <p className="text-sm text-gray-600">Mês Atual</p>
               </div>
             </div>

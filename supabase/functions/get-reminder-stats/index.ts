@@ -1,196 +1,168 @@
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
 const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-};
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Access-Control-Allow-Methods': 'POST, GET, OPTIONS',
+}
 
-// Helper function for logging
-const logStep = (step: string, details?: any) => {
-  const detailsStr = details ? ` - ${JSON.stringify(details)}` : '';
-  console.log(`[GET-REMINDER-STATS] ${step}${detailsStr}`);
-};
+interface ReminderStats {
+  totalUsers: number;
+  activeReminders: number;
+  monthlyUsage: {
+    basic: number;
+    pro: number;
+  };
+  planDistribution: {
+    basic: number;
+    pro: number;
+  };
+  currentMonth: string;
+  limits: {
+    basic: number;
+    pro: number;
+  };
+}
 
 serve(async (req) => {
-  // Handle CORS preflight requests
-  if (req.method === "OPTIONS") {
-    return new Response(null, { headers: corsHeaders });
+  if (req.method === 'OPTIONS') {
+    return new Response(null, { headers: corsHeaders })
   }
 
   try {
-    logStep("Function started");
-
-    // Get authorization header
-    const authHeader = req.headers.get("Authorization");
-    if (!authHeader) {
-      throw new Error("No authorization header provided");
-    }
-
-    // Initialize Supabase client with auth header
     const supabaseClient = createClient(
-      Deno.env.get("SUPABASE_URL") ?? "",
-      Deno.env.get("SUPABASE_ANON_KEY") ?? "",
-      {
-        global: {
-          headers: { Authorization: authHeader },
-        },
-      }
-    );
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+    )
 
-    // Initialize service client for database operations
-    const supabaseService = createClient(
-      Deno.env.get("SUPABASE_URL") ?? "",
-      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "",
-      {
-        auth: {
-          persistSession: false,
-        },
-      }
-    );
-
-    // Get authenticated user
-    const { data: userData, error: userError } = await supabaseClient.auth.getUser();
-    if (userError || !userData.user) {
-      logStep("ERROR: User authentication failed", { error: userError?.message });
-      throw new Error("User not authenticated");
+    // Verify admin access
+    const authHeader = req.headers.get('Authorization')
+    if (!authHeader) {
+      throw new Error('No authorization header')
     }
 
-    const userId = userData.user.id;
-    logStep("User authenticated", { userId });
+    const { data: { user }, error: authError } = await supabaseClient.auth.getUser(
+      authHeader.replace('Bearer ', '')
+    )
 
-    // Get current month stats
-    const currentMonth = new Date().toISOString().substring(0, 7); // YYYY-MM format
-    
-    // Get user's reminder limit
-    const { data: limitResult, error: limitError } = await supabaseService
-      .rpc('get_user_reminder_limit', { p_user_id: userId });
-
-    if (limitError) {
-      logStep("ERROR: Failed to get user reminder limit", { error: limitError.message });
-      throw new Error("Failed to get reminder limit");
+    if (authError || !user) {
+      throw new Error('Invalid user')
     }
 
-    // Get current month usage
-    const { data: usageResult, error: usageError } = await supabaseService
-      .rpc('get_current_month_usage', { p_user_id: userId });
+    const { data: roleData, error: roleError } = await supabaseClient
+      .from('user_roles')
+      .select('role')
+      .eq('user_id', user.id)
+      .single()
 
-    if (usageError) {
-      logStep("ERROR: Failed to get current usage", { error: usageError.message });
-      throw new Error("Failed to get current usage");
+    if (roleError || roleData?.role !== 'admin') {
+      throw new Error('Admin access required')
     }
 
-    // Get usage history (last 6 months)
-    const sixMonthsAgo = new Date();
-    sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
-    const sixMonthsAgoStr = sixMonthsAgo.toISOString().substring(0, 7);
+    // Get current month
+    const currentMonth = new Date().toISOString().slice(0, 7); // YYYY-MM
 
-    const { data: usageHistory, error: historyError } = await supabaseService
-      .from("poupeja_reminder_usage")
-      .select("month_year, reminders_used")
-      .eq("user_id", userId)
-      .gte("month_year", sixMonthsAgoStr)
-      .order("month_year", { ascending: false });
+    // Get all subscriptions
+    const { data: subscriptions } = await supabaseClient
+      .from('poupeja_subscriptions')
+      .select('*')
+      .eq('status', 'active')
 
-    if (historyError) {
-      logStep("Warning: Failed to get usage history", { error: historyError.message });
-    }
+    // Get reminder usage for current month
+    const { data: reminderUsage } = await supabaseClient
+      .from('poupeja_reminder_usage')
+      .select('*')
+      .eq('month_year', currentMonth)
 
-    // Get subscription info
-    const { data: subscription, error: subError } = await supabaseService
-      .from("poupeja_subscriptions")
-      .select("plan_type, status, current_period_end, reminder_limit")
-      .eq("user_id", userId)
-      .eq("status", "active")
-      .order("created_at", { ascending: false })
-      .limit(1)
-      .single();
+    // Get total number of users
+    const { count: totalUsers } = await supabaseClient
+      .from('poupeja_users')
+      .select('*', { count: 'exact', head: true })
 
-    const limit = limitResult || 15;
-    const usage = usageResult || 0;
-    const remaining = Math.max(0, limit - usage);
-    const planType = subscription?.plan_type || 'free';
-    const usagePercentage = limit > 0 ? Math.round((usage / limit) * 100) : 0;
+    // Get reminder limits from settings
+    const { data: basicLimitSetting } = await supabaseClient
+      .from('poupeja_settings')
+      .select('value')
+      .eq('category', 'pricing')
+      .eq('key', 'reminder_limit_basic')
+      .single()
 
-    // Generate monthly breakdown for chart
-    const monthlyBreakdown = [];
-    for (let i = 5; i >= 0; i--) {
-      const date = new Date();
-      date.setMonth(date.getMonth() - i);
-      const monthKey = date.toISOString().substring(0, 7);
-      
-      const monthUsage = usageHistory?.find(h => h.month_year === monthKey);
-      const monthName = date.toLocaleDateString('pt-BR', { month: 'short', year: '2-digit' });
-      
-      monthlyBreakdown.push({
-        month: monthName,
-        monthKey,
-        used: monthUsage?.reminders_used || 0,
-        limit: limit
-      });
-    }
+    const { data: proLimitSetting } = await supabaseClient
+      .from('poupeja_settings')
+      .select('value')
+      .eq('category', 'pricing')
+      .eq('key', 'reminder_limit_pro')
+      .single()
 
-    logStep("Stats calculated successfully", {
-      limit,
-      usage,
-      remaining,
-      usagePercentage,
-      planType,
-      historyCount: usageHistory?.length || 0
-    });
+    const basicLimit = parseInt(basicLimitSetting?.value || '15')
+    const proLimit = parseInt(proLimitSetting?.value || '50')
 
-    return new Response(
-      JSON.stringify({
-        success: true,
-        data: {
-          currentMonth: {
-            usage,
-            limit,
-            remaining,
-            usagePercentage,
-            canCreateReminder: usage < limit
-          },
-          subscription: {
-            planType,
-            hasActiveSubscription: !!subscription,
-            periodEnd: subscription?.current_period_end
-          },
-          history: {
-            monthlyBreakdown,
-            totalMonths: usageHistory?.length || 0
-          },
-          insights: {
-            averageMonthlyUsage: usageHistory?.length > 0 
-              ? Math.round(usageHistory.reduce((sum, h) => sum + h.reminders_used, 0) / usageHistory.length)
-              : 0,
-            maxMonthlyUsage: usageHistory?.length > 0
-              ? Math.max(...usageHistory.map(h => h.reminders_used))
-              : 0,
-            isNearLimit: usagePercentage >= 80,
-            shouldUpgrade: planType.includes('monthly') && usagePercentage >= 90
+    // Process plan distribution
+    const basicUsers = subscriptions?.filter(s => 
+      s.plan_type?.includes('monthly') && !s.plan_type?.includes('pro')
+    ).length || 0
+
+    const proUsers = subscriptions?.filter(s => 
+      s.plan_type?.includes('pro')
+    ).length || 0
+
+    // Process monthly usage by plan
+    let basicUsage = 0
+    let proUsage = 0
+
+    if (reminderUsage && subscriptions) {
+      for (const usage of reminderUsage) {
+        const userSubscription = subscriptions.find(s => s.user_id === usage.user_id)
+        if (userSubscription) {
+          if (userSubscription.plan_type?.includes('pro')) {
+            proUsage += usage.reminders_used || 0
+          } else {
+            basicUsage += usage.reminders_used || 0
           }
+        } else {
+          // User without subscription counts as basic
+          basicUsage += usage.reminders_used || 0
         }
-      }),
-      {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-        status: 200,
       }
-    );
+    }
+
+    const stats: ReminderStats = {
+      totalUsers: totalUsers || 0,
+      activeReminders: reminderUsage?.length || 0,
+      monthlyUsage: {
+        basic: basicUsage,
+        pro: proUsage,
+      },
+      planDistribution: {
+        basic: basicUsers,
+        pro: proUsers,
+      },
+      currentMonth,
+      limits: {
+        basic: basicLimit,
+        pro: proLimit,
+      }
+    }
+
+    return new Response(JSON.stringify({
+      success: true,
+      data: stats
+    }), {
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    })
 
   } catch (error) {
-    const errorMessage = error instanceof Error ? error.message : String(error);
-    logStep("ERROR in get-reminder-stats", { message: errorMessage });
-    console.error("Error:", error);
-    
+    console.error('Error in get-reminder-stats:', error)
     return new Response(
-      JSON.stringify({
+      JSON.stringify({ 
         success: false,
-        error: errorMessage
+        error: error.message 
       }),
       {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-        status: 500,
+        status: 400,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       }
-    );
+    )
   }
-});
+})
