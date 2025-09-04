@@ -7,6 +7,7 @@ import { SubscriptionProvider } from "@/contexts/SubscriptionContext";
 import { BrandingProvider } from "@/contexts/BrandingContext";
 import { AppProvider } from "@/contexts/AppContext";
 import { SupabaseInitializer } from "@/components/common/SupabaseInitializer";
+import SystemHealthMonitor from "@/components/common/SystemHealthMonitor";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -77,9 +78,10 @@ function App() {
                          <Route path="/terms" element={<TermsPage />} />
                         <Route path="*" element={<div className="text-center p-8">Página não encontrada</div>} />
                       </Routes>
-                    </BrowserRouter>
-                    <Toaster />
-                    <Sonner />
+                     </BrowserRouter>
+                     <SystemHealthMonitor />
+                     <Toaster />
+                     <Sonner />
                   </AppProvider>
                 </SubscriptionProvider>
               </SupabaseInitializer>

@@ -10,13 +10,18 @@ export default defineConfig(({ mode }) => ({
   server: {
     host: "::",
     port: 8080,
+    // Configuração explícita de MIME types
+    middlewareMode: false,
+    hmr: {
+      port: 8080,
+    },
   },
   plugins: [
     react(),
     mode === 'development' &&
     componentTagger(),
     VitePWA({
-      registerType: 'autoUpdate',
+      registerType: 'prompt',
       includeAssets: ['favicon.ico', 'apple-touch-icon.png', 'masked-icon.svg'],
       manifest: {
         name: 'PoupeJá',
@@ -48,6 +53,8 @@ export default defineConfig(({ mode }) => ({
         categories: ['finance', 'productivity']
       },
       workbox: {
+        skipWaiting: false,
+        clientsClaim: false,
         globPatterns: ['**/*.{js,css,html,ico,png,svg,json,ttf,woff,woff2}'],
         maximumFileSizeToCacheInBytes: 5 * 1024 * 1024, // 5 MB limit
         runtimeCaching: [
@@ -63,10 +70,7 @@ export default defineConfig(({ mode }) => ({
             }
           }
         ],
-        // Adicionar esta configuração para lidar com todas as rotas de navegação
         navigateFallback: 'index.html',
-        // Opcionalmente, você pode excluir algumas rotas da navegação fallback
-        // navigateFallbackDenylist: [/^\/api\//]
       },
       devOptions: {
         enabled: true,

@@ -47,11 +47,46 @@ const RegisterPage = () => {
   const [isLoadingAddress, setIsLoadingAddress] = useState(false);
   const [rateLimitCooldown, setRateLimitCooldown] = useState(0);
   const [lastAttemptTime, setLastAttemptTime] = useState<number>(0);
+  const [attemptCount, setAttemptCount] = useState(0);
 
   // Hook para atualizar o cooldown timer
   const [cooldownDisplay, setCooldownDisplay] = useState<string>('');
 
   const priceId = searchParams.get('priceId');
+
+  // Carregar estado do localStorage na inicialização
+  React.useEffect(() => {
+    const savedState = localStorage.getItem('register_cooldown_state');
+    if (savedState) {
+      try {
+        const { cooldown, lastAttempt, attempts } = JSON.parse(savedState);
+        const now = Date.now();
+        if (cooldown > 0 && now < lastAttempt + cooldown) {
+          setRateLimitCooldown(cooldown);
+          setLastAttemptTime(lastAttempt);
+          setAttemptCount(attempts || 0);
+        } else {
+          // Limpar estado expirado
+          localStorage.removeItem('register_cooldown_state');
+        }
+      } catch (e) {
+        localStorage.removeItem('register_cooldown_state');
+      }
+    }
+  }, []);
+
+  // Salvar estado no localStorage
+  const saveCooldownState = (cooldown: number, lastAttempt: number, attempts: number) => {
+    if (cooldown > 0) {
+      localStorage.setItem('register_cooldown_state', JSON.stringify({
+        cooldown,
+        lastAttempt,
+        attempts
+      }));
+    } else {
+      localStorage.removeItem('register_cooldown_state');
+    }
+  };
 
   // Atualizar display do cooldown
   React.useEffect(() => {
@@ -86,42 +121,72 @@ const RegisterPage = () => {
     return () => clearInterval(interval);
   }, [rateLimitCooldown, lastAttemptTime]);
 
-  // Função simplificada para aguardar sessão
-  const waitForSession = async (): Promise<boolean> => {
-    try {
-      // Verificar se já há sessão ativa
-      const { data: { session: currentSession } } = await supabase.auth.getSession();
-      if (currentSession?.user) {
-        return true;
-      }
+  // Função melhorada para aguardar sessão com retry
+  const waitForSession = async (maxRetries: number = 3): Promise<boolean> => {
+    let retryCount = 0;
+    
+    while (retryCount < maxRetries) {
+      try {
+        console.log(`🔄 Tentativa ${retryCount + 1}/${maxRetries} - Verificando sessão...`);
+        
+        // Verificar se já há sessão ativa
+        const { data: { session: currentSession } } = await supabase.auth.getSession();
+        if (currentSession?.user) {
+          console.log('✅ Sessão encontrada imediatamente');
+          return true;
+        }
 
-      // Aguardar até 5 segundos por uma nova sessão
-      return new Promise((resolve) => {
-        let timeoutId: NodeJS.Timeout;
-        const cleanup = () => {
-          if (timeoutId) clearTimeout(timeoutId);
-          subscription.unsubscribe();
-        };
+        // Aguardar até 10 segundos por uma nova sessão
+        const sessionPromise = new Promise<boolean>((resolve) => {
+          let timeoutId: NodeJS.Timeout;
+          const cleanup = () => {
+            if (timeoutId) clearTimeout(timeoutId);
+            subscription.unsubscribe();
+          };
 
-        const { data: { subscription } } = supabase.auth.onAuthStateChange(
-          (event, session) => {
-            if (session?.user) {
-              cleanup();
-              resolve(true);
+          const { data: { subscription } } = supabase.auth.onAuthStateChange(
+            (event, session) => {
+              console.log(`🔔 Auth event: ${event}, Session: ${!!session}`);
+              if (session?.user) {
+                cleanup();
+                resolve(true);
+              }
             }
-          }
-        );
+          );
 
-        // Timeout de 5 segundos
-        timeoutId = setTimeout(() => {
-          cleanup();
-          resolve(false);
-        }, 5000);
-      });
-    } catch (error) {
-      console.error('Erro ao aguardar sessão:', error);
-      return false;
+          // Timeout progressivo (mais tempo a cada retry)
+          const timeoutMs = 5000 + (retryCount * 2500); // 5s, 7.5s, 10s
+          timeoutId = setTimeout(() => {
+            cleanup();
+            resolve(false);
+          }, timeoutMs);
+        });
+
+        const hasSession = await sessionPromise;
+        if (hasSession) {
+          console.log(`✅ Sessão estabelecida na tentativa ${retryCount + 1}`);
+          return true;
+        }
+        
+        retryCount++;
+        console.log(`⚠️ Tentativa ${retryCount} falhou, tentando novamente...`);
+        
+        // Aguardar antes da próxima tentativa
+        if (retryCount < maxRetries) {
+          await new Promise(resolve => setTimeout(resolve, 1000));
+        }
+        
+      } catch (error) {
+        console.error(`❌ Erro na tentativa ${retryCount + 1}:`, error);
+        retryCount++;
+        if (retryCount < maxRetries) {
+          await new Promise(resolve => setTimeout(resolve, 1000));
+        }
+      }
     }
+    
+    console.log(`❌ Todas as ${maxRetries} tentativas falharam`);
+    return false;
   };
 
   // Função para formatar o número de telefone como (XX) XXXXX-XXXX
@@ -401,17 +466,28 @@ const RegisterPage = () => {
       
       // Tratar rate limiting especificamente
       if (err.message?.includes('email rate limit exceeded') || err.code === 'over_email_send_rate_limit') {
-        // Implementar cooldown exponencial
-        const cooldownTime = rateLimitCooldown === 0 ? 60000 : Math.min(rateLimitCooldown * 2, 300000); // 1 min para 5 min máximo
+        // Implementar cooldown exponencial baseado no número de tentativas
+        const newAttemptCount = attemptCount + 1;
+        const baseCooldown = 60000; // 1 minuto base
+        const cooldownTime = Math.min(baseCooldown * Math.pow(2, newAttemptCount - 1), 300000); // máximo 5 minutos
+        
+        setAttemptCount(newAttemptCount);
         setRateLimitCooldown(cooldownTime);
         
+        // Salvar estado no localStorage
+        saveCooldownState(cooldownTime, now, newAttemptCount);
+        
         const minutes = Math.ceil(cooldownTime / 60000);
-        setError(`Limite de envio de emails atingido. Aguarde ${minutes} minuto(s) antes de tentar novamente. Use um email diferente se necessário.`);
+        const seconds = Math.ceil((cooldownTime % 60000) / 1000);
+        
+        const timeDisplay = minutes > 0 ? `${minutes} minuto(s)` : `${seconds} segundo(s)`;
+        
+        setError(`Limite de envio de emails atingido. Aguarde ${timeDisplay} antes de tentar novamente. Use um email diferente se necessário.`);
         
         // Sugerir alternativas
         toast({
-          title: "Limite de emails atingido",
-          description: `Tente novamente em ${minutes} minuto(s) ou use um email diferente.`,
+          title: "⏰ Limite de emails atingido",
+          description: `Tente novamente em ${timeDisplay} ou use um email diferente. Tentativa ${newAttemptCount}/5`,
           variant: "destructive",
         });
       } else if (err.message?.includes('User already registered') || err.message?.includes('already been registered')) {
