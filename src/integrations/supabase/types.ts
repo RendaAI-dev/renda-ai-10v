@@ -545,36 +545,57 @@ export type Database = {
       poupeja_users: {
         Row: {
           birth_date: string | null
+          city: string | null
+          complement: string | null
           cpf: string | null
           created_at: string | null
           email: string
           id: string
           name: string | null
+          neighborhood: string | null
+          number: string | null
           phone: string | null
           profile_image: string | null
+          state: string | null
+          street: string | null
           updated_at: string | null
+          zip_code: string | null
         }
         Insert: {
           birth_date?: string | null
+          city?: string | null
+          complement?: string | null
           cpf?: string | null
           created_at?: string | null
           email: string
           id: string
           name?: string | null
+          neighborhood?: string | null
+          number?: string | null
           phone?: string | null
           profile_image?: string | null
+          state?: string | null
+          street?: string | null
           updated_at?: string | null
+          zip_code?: string | null
         }
         Update: {
           birth_date?: string | null
+          city?: string | null
+          complement?: string | null
           cpf?: string | null
           created_at?: string | null
           email?: string
           id?: string
           name?: string | null
+          neighborhood?: string | null
+          number?: string | null
           phone?: string | null
           profile_image?: string | null
+          state?: string | null
+          street?: string | null
           updated_at?: string | null
+          zip_code?: string | null
         }
         Relationships: []
       }
