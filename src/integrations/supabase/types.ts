@@ -681,6 +681,10 @@ export type Database = {
         Args: { p_value: string }
         Returns: string
       }
+      fix_user_auth_issues: {
+        Args: { user_email: string }
+        Returns: boolean
+      }
       generate_upload_path: {
         Args: { file_extension: string; user_id: string }
         Returns: string

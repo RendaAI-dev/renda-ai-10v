@@ -5,6 +5,7 @@ import AdminProfileConfig from '@/components/admin/AdminProfileConfig';
 import AdminSectionTabs from '@/components/admin/AdminSectionTabs';
 import SystemValidator from '@/components/admin/SystemValidator';
 import PerformanceMonitor from '@/components/testing/PerformanceMonitor';
+import AuthRecoverySystem from '@/components/auth/AuthRecoverySystem';
 import Sidebar from '@/components/layout/Sidebar';
 import MobileNavBar from '@/components/layout/MobileNavBar';
 import MobileHeader from '@/components/layout/MobileHeader';
@@ -130,6 +131,11 @@ const AdminDashboard: React.FC = () => {
                     <SystemValidator />
                     <PerformanceMonitor />
                   </div>
+                  
+                  {/* Sistema de Recuperação de Autenticação */}
+                  <div className="mt-8">
+                    <AuthRecoverySystem />
+                  </div>
                 </div>
               )}
             </div>
@@ -199,6 +205,11 @@ const AdminDashboard: React.FC = () => {
                   <div className="mt-8 grid grid-cols-1 lg:grid-cols-2 gap-6">
                     <SystemValidator />
                     <PerformanceMonitor />
+                  </div>
+                  
+                  {/* Sistema de Recuperação de Autenticação */}
+                  <div className="mt-8">
+                    <AuthRecoverySystem />
                   </div>
                 </div>
               )}

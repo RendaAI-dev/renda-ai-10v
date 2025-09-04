@@ -11,6 +11,7 @@ import { loginUser } from '@/services/authService';
 import { useAppContext } from '@/contexts/AppContext';
 import { supabase } from '@/integrations/supabase/client';
 import { useBrandingConfig } from '@/hooks/useBrandingConfig';
+import AuthRecoverySystem from '@/components/auth/AuthRecoverySystem';
 
 const LoginPage = () => {
   const navigate = useNavigate();
@@ -22,6 +23,7 @@ const LoginPage = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+  const [showRecovery, setShowRecovery] = useState(false);
 
   // Check if user is already logged in
   useEffect(() => {    
@@ -89,11 +91,25 @@ const LoginPage = () => {
       
       let errorMessage = error.message || t('auth.loginError');
       
-      // Handle specific error cases
+      // Handle specific error cases with auto-recovery suggestions
       if (error.message?.includes('Invalid login credentials')) {
-        errorMessage = t('errors.emailIncorrect');
+        errorMessage = `${t('errors.emailIncorrect')} - Clique em "Recuperar Conta" para corrigir.`;
+        setShowRecovery(true);
       } else if (error.message?.includes('Email not confirmed')) {
-        errorMessage = t('errors.confirmEmail');
+        errorMessage = `${t('errors.confirmEmail')} - Tentando corrigir automaticamente...`;
+        // Tentar confirmar email automaticamente
+        try {
+          await supabase.rpc('fix_user_auth_issues', { user_email: email });
+          toast({
+            title: 'Email Confirmado',
+            description: 'Tente fazer login novamente.',
+          });
+        } catch (fixError) {
+          console.warn('Erro na correção automática:', fixError);
+        }
+      } else if (error.message?.includes('rate limit')) {
+        errorMessage = 'Muitas tentativas. Aguarde alguns minutos ou use a recuperação de conta.';
+        setShowRecovery(true);
       }
       
       toast({
@@ -212,7 +228,24 @@ const LoginPage = () => {
                 >
                   {isLoading ? 'Carregando...' : t('auth.login')}
                 </Button>
+                
+                {/* Botão para mostrar/ocultar sistema de recuperação */}
+                <Button 
+                  type="button"
+                  variant={showRecovery ? "secondary" : "outline"}
+                  className="w-full"
+                  onClick={() => setShowRecovery(!showRecovery)}
+                >
+                  {showRecovery ? 'Ocultar Recuperação' : 'Problemas para Entrar? Recuperar Conta'}
+                </Button>
               </form>
+              
+              {/* Sistema de Recuperação de Autenticação */}
+              {showRecovery && (
+                <div className="mt-6">
+                  <AuthRecoverySystem />
+                </div>
+              )}
               
               <div className="mt-6 text-center text-sm text-muted-foreground">
                 <p>
