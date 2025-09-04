@@ -58,6 +58,31 @@ export const formatCPF = (cpf: string): string => {
 };
 
 /**
+ * Validates if CPF is unique in the database
+ * @param cpf - CPF string to validate
+ * @returns Promise<boolean> - true if CPF is unique or empty
+ */
+export const validateUniqueCPF = async (cpf: string): Promise<boolean> => {
+  if (!cpf || cpf.trim() === '') return true; // Empty CPF is allowed
+  
+  const { supabase } = await import('@/integrations/supabase/client');
+  const cleanedCPF = cleanCPF(cpf);
+  
+  const { data, error } = await supabase
+    .from('poupeja_users')
+    .select('id')
+    .eq('cpf', cleanedCPF)
+    .limit(1);
+  
+  if (error) {
+    console.error('Error checking CPF uniqueness:', error);
+    return false;
+  }
+  
+  return !data || data.length === 0;
+};
+
+/**
  * Removes formatting from CPF
  * @param cpf - Formatted CPF string
  * @returns string - Clean CPF with only digits

@@ -8,7 +8,7 @@ import { Eye, EyeOff, Mail, Lock, User, Phone, CreditCard, Calendar } from 'luci
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
 import * as z from 'zod';
-import { validateCPF, formatCPF, validateAge } from "@/utils/cpfValidation";
+import { validateCPF, formatCPF, validateAge, validateUniqueCPF } from "@/utils/cpfValidation";
 
 interface AuthFormProps {
   onSubmit: (email: string, password: string, name?: string, phone?: string, cpf?: string, birthDate?: string) => void;
@@ -45,6 +45,9 @@ const AuthForm: React.FC<AuthFormProps> = ({
     birthDate: z.string().optional().refine((val) => !val || validateAge(val), {
       message: "Você deve ter pelo menos 18 anos"
     }),
+  }).refine(async (data) => !data.cpf || await validateUniqueCPF(data.cpf), {
+    message: "Este CPF já está cadastrado",
+    path: ["cpf"]
   });
   
   // Initialize form with react-hook-form and zod validation

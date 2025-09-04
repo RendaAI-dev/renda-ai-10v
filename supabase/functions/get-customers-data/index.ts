@@ -50,6 +50,8 @@ serve(async (req) => {
         name,
         email,
         phone,
+        cpf,
+        birth_date,
         created_at,
         updated_at
       `)
@@ -74,6 +76,8 @@ serve(async (req) => {
         name: user.name || 'Sem nome',
         email: user.email,
         phone: user.phone || '-',
+        cpf: user.cpf || '-',
+        birthDate: user.birth_date || '-',
         registeredAt: user.created_at,
         lastActivity: user.updated_at,
         subscriptionStatus: activeSubscription?.status || 'sem_assinatura',

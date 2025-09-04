@@ -11,8 +11,9 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Separator } from '@/components/ui/separator';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/components/ui/use-toast';
-import { Phone, Camera, Mail, Key, Loader2 } from 'lucide-react';
+import { Phone, Camera, Mail, Key, Loader2, CreditCard, Calendar } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { formatCPF } from '@/utils/cpfValidation';
 
 const ProfilePage = () => {
   const { t } = usePreferences();
@@ -22,6 +23,8 @@ const ProfilePage = () => {
   const [name, setName] = useState(user?.name || '');
   const [email, setEmail] = useState(user?.email || '');
   const [phone, setPhone] = useState(user?.phone || '');
+  const [cpf, setCpf] = useState('');
+  const [birthDate, setBirthDate] = useState('');
   const [isEditing, setIsEditing] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [profileImage, setProfileImage] = useState(user?.profileImage || '');
@@ -58,6 +61,8 @@ const ProfilePage = () => {
             setEmail(session.user.email || '');
             setPhone(data.phone || '');
             setProfileImage(data.profile_image || '');
+            setCpf(data.cpf || '');
+            setBirthDate(data.birth_date || '');
           }
         }
       } catch (error) {
@@ -284,9 +289,41 @@ const ProfilePage = () => {
                       </Button>
                     </div>
                   </form>
-                ) : (
-                  <Button onClick={() => setIsEditing(true)}>Editar Informações</Button>
-                )}
+                  ) : (
+                    <div className="space-y-4">
+                      {/* CPF - Read only display */}
+                      {cpf && (
+                        <div className="grid gap-2">
+                          <label className="font-medium text-sm text-muted-foreground">CPF</label>
+                          <div className="relative">
+                            <CreditCard className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground h-4 w-4" />
+                            <Input 
+                              value={formatCPF(cpf)} 
+                              disabled
+                              className="pl-10 bg-muted"
+                            />
+                          </div>
+                        </div>
+                      )}
+                      
+                      {/* Birth Date - Read only display */}
+                      {birthDate && (
+                        <div className="grid gap-2">
+                          <label className="font-medium text-sm text-muted-foreground">Data de Nascimento</label>
+                          <div className="relative">
+                            <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground h-4 w-4" />
+                            <Input 
+                              value={new Date(birthDate).toLocaleDateString('pt-BR')} 
+                              disabled
+                              className="pl-10 bg-muted"
+                            />
+                          </div>
+                        </div>
+                      )}
+                      
+                      <Button onClick={() => setIsEditing(true)}>Editar Informações</Button>
+                    </div>
+                  )}
               </CardContent>
             </Card>
             
@@ -447,6 +484,42 @@ const ProfilePage = () => {
                           Formato: código do país + DDD + número (ex: 5511999999999)
                         </p>
                       </div>
+                      
+                      {/* CPF - Read only display */}
+                      {cpf && (
+                        <div className="grid gap-2">
+                          <label className="font-medium">CPF</label>
+                          <div className="relative">
+                            <CreditCard className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground h-4 w-4" />
+                            <Input 
+                              value={formatCPF(cpf)} 
+                              disabled
+                              className="pl-10 bg-muted"
+                            />
+                          </div>
+                          <p className="text-sm text-muted-foreground">
+                            O CPF não pode ser alterado
+                          </p>
+                        </div>
+                      )}
+                      
+                      {/* Birth Date - Read only display */}
+                      {birthDate && (
+                        <div className="grid gap-2">
+                          <label className="font-medium">Data de Nascimento</label>
+                          <div className="relative">
+                            <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground h-4 w-4" />
+                            <Input 
+                              value={new Date(birthDate).toLocaleDateString('pt-BR')} 
+                              disabled
+                              className="pl-10 bg-muted"
+                            />
+                          </div>
+                          <p className="text-sm text-muted-foreground">
+                            A data de nascimento não pode ser alterada
+                          </p>
+                        </div>
+                      )}
                       
                       <div className="flex space-x-2">
                         <Button type="submit" disabled={updatingProfile}>

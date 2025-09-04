@@ -5,15 +5,19 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Search, Users, Download, Eye } from 'lucide-react';
+import { Search, Users, Download, Eye, MoreHorizontal, UserX } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { formatCPF } from '@/utils/cpfValidation';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 
 interface Customer {
   id: string;
   name: string;
   email: string;
   phone: string;
+  cpf: string;
+  birthDate: string;
   registeredAt: string;
   lastActivity: string;
   subscriptionStatus: string;
@@ -141,7 +145,8 @@ const CustomersTable: React.FC = () => {
     const matchesSearch = 
       customer.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       customer.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      customer.phone.toLowerCase().includes(searchTerm.toLowerCase());
+      customer.phone.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      customer.cpf.toLowerCase().includes(searchTerm.toLowerCase());
 
     const matchesStatus = statusFilter === 'all' || customer.subscriptionStatus === statusFilter;
     
@@ -152,11 +157,13 @@ const CustomersTable: React.FC = () => {
 
   const exportToCSV = () => {
     const csvContent = [
-      ['Nome', 'Email', 'Telefone', 'Cadastro', 'Status', 'Plano', 'Valor', 'Última Atividade'],
+      ['Nome', 'Email', 'Telefone', 'CPF', 'Nascimento', 'Cadastro', 'Status', 'Plano', 'Valor', 'Última Atividade'],
       ...filteredCustomers.map(customer => [
         customer.name,
         customer.email,
         customer.phone,
+        customer.cpf,
+        customer.birthDate !== '-' ? new Date(customer.birthDate).toLocaleDateString('pt-BR') : '-',
         formatDate(customer.registeredAt),
         customer.subscriptionStatus,
         customer.planType,
@@ -275,7 +282,7 @@ const CustomersTable: React.FC = () => {
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
                 <Input
-                  placeholder="Buscar por nome, email ou telefone..."
+                  placeholder="Buscar por nome, email, telefone ou CPF..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   className="pl-9"
@@ -312,18 +319,19 @@ const CustomersTable: React.FC = () => {
                 <TableRow>
                   <TableHead>Cliente</TableHead>
                   <TableHead>Contato</TableHead>
+                  <TableHead>CPF</TableHead>
+                  <TableHead>Nascimento</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead>Plano</TableHead>
                   <TableHead>Valor</TableHead>
                   <TableHead>Cadastro</TableHead>
-                  <TableHead>Última Atividade</TableHead>
                   <TableHead className="text-right">Ações</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {filteredCustomers.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={8} className="text-center py-8">
+                    <TableCell colSpan={9} className="text-center py-8">
                       <p className="text-muted-foreground">
                         Nenhum cliente encontrado com os filtros aplicados
                       </p>
@@ -347,6 +355,19 @@ const CustomersTable: React.FC = () => {
                         </div>
                       </TableCell>
                       <TableCell>
+                        <span className="text-sm font-mono">
+                          {customer.cpf !== '-' ? formatCPF(customer.cpf) : '-'}
+                        </span>
+                      </TableCell>
+                      <TableCell>
+                        <span className="text-sm">
+                          {customer.birthDate !== '-' ? 
+                            new Date(customer.birthDate).toLocaleDateString('pt-BR') : 
+                            '-'
+                          }
+                        </span>
+                      </TableCell>
+                      <TableCell>
                         {getStatusBadge(customer.subscriptionStatus, customer.cancelAtPeriodEnd)}
                       </TableCell>
                       <TableCell>
@@ -366,15 +387,24 @@ const CustomersTable: React.FC = () => {
                           {formatDate(customer.registeredAt)}
                         </span>
                       </TableCell>
-                      <TableCell>
-                        <span className="text-sm">
-                          {formatDate(customer.lastActivity)}
-                        </span>
-                      </TableCell>
                       <TableCell className="text-right">
-                        <Button size="sm" variant="ghost">
-                          <Eye className="h-4 w-4" />
-                        </Button>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button size="sm" variant="ghost">
+                              <MoreHorizontal className="h-4 w-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuItem>
+                              <Eye className="mr-2 h-4 w-4" />
+                              Ver Detalhes
+                            </DropdownMenuItem>
+                            <DropdownMenuItem className="text-destructive">
+                              <UserX className="mr-2 h-4 w-4" />
+                              Suspender
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
                       </TableCell>
                     </TableRow>
                   ))
