@@ -48,40 +48,42 @@ const RegisterPage = () => {
 
   const priceId = searchParams.get('priceId');
 
-  const waitForSession = (): Promise<boolean> => {
-    return new Promise((resolve) => {
-      let resolved = false;
-      
-      // Timeout após 30 segundos
-      const timeout = setTimeout(() => {
-        if (!resolved) {
-          resolved = true;
-          resolve(false);
-        }
-      }, 30000);
-      
-      // Listener para mudanças de sessão
-      const { data: { subscription } } = supabase.auth.onAuthStateChange(
-        (event, session) => {
-          if (!resolved && session?.user) {
-            resolved = true;
-            clearTimeout(timeout);
-            subscription.unsubscribe();
-            resolve(true);
-          }
-        }
-      );
-      
-      // Verificar sessão atual uma vez
-      supabase.auth.getSession().then(({ data: { session } }) => {
-        if (!resolved && session?.user) {
-          resolved = true;
-          clearTimeout(timeout);
+  // Função simplificada para aguardar sessão
+  const waitForSession = async (): Promise<boolean> => {
+    try {
+      // Verificar se já há sessão ativa
+      const { data: { session: currentSession } } = await supabase.auth.getSession();
+      if (currentSession?.user) {
+        return true;
+      }
+
+      // Aguardar até 5 segundos por uma nova sessão
+      return new Promise((resolve) => {
+        let timeoutId: NodeJS.Timeout;
+        const cleanup = () => {
+          if (timeoutId) clearTimeout(timeoutId);
           subscription.unsubscribe();
-          resolve(true);
-        }
+        };
+
+        const { data: { subscription } } = supabase.auth.onAuthStateChange(
+          (event, session) => {
+            if (session?.user) {
+              cleanup();
+              resolve(true);
+            }
+          }
+        );
+
+        // Timeout de 5 segundos
+        timeoutId = setTimeout(() => {
+          cleanup();
+          resolve(false);
+        }, 5000);
       });
-    });
+    } catch (error) {
+      console.error('Erro ao aguardar sessão:', error);
+      return false;
+    }
   };
 
   // Função para formatar o número de telefone como (XX) XXXXX-XXXX
@@ -249,20 +251,48 @@ const RegisterPage = () => {
 
       console.log('✅ Usuário criado com sucesso:', authData.user?.id);
 
-      // Aguardar sessão válida - método simplificado
-      console.log('🔄 Aguardando confirmação da sessão...');
+      // Tentar aguardar sessão por alguns segundos
+      console.log('🔄 Verificando sessão...');
       const sessionValid = await waitForSession();
       
       if (!sessionValid) {
-        console.log('⚠️ Sessão não confirmada, redirecionando para login...');
-        throw new Error('Email criado com sucesso! Faça login para continuar.');
+        // Se não conseguir sessão imediatamente, usar useAutoLogin
+        console.log('⚠️ Sessão não disponível imediatamente, usando login automático...');
+        const { useAutoLogin } = await import('@/hooks/useAutoLogin');
+        
+        toast({
+          title: "Conta criada!",
+          description: "Redirecionando para finalizar o processo...",
+        });
+        
+        // Redirecionar para completar o login
+        setTimeout(() => {
+          navigate('/login', { 
+            state: { 
+              email, 
+              autoLogin: true,
+              priceId,
+              message: "Conta criada! Complete o login para continuar." 
+            } 
+          });
+        }, 1000);
+        
+        return;
       }
 
       // Obter sessão atual para o checkout
       const { data: { session } } = await supabase.auth.getSession();
       
       if (!session?.access_token) {
-        throw new Error('Sessão inválida após registro');
+        // Fallback para login manual
+        navigate('/login', { 
+          state: { 
+            email, 
+            priceId,
+            message: "Conta criada! Faça login para continuar o checkout." 
+          } 
+        });
+        return;
       }
       
       // Converter priceId para planType
@@ -314,8 +344,22 @@ const RegisterPage = () => {
         throw new Error('Não foi possível obter a URL de checkout.');
       }
     } catch (err: any) {
-      console.error('Erro no processo de registro ou checkout:', err);
-      setError(err.message || 'Ocorreu um erro desconhecido.');
+      console.error('Erro no processo de registro:', err);
+      
+      // Tratar diferentes tipos de erro
+      if (err.message?.includes('Email rate limit exceeded')) {
+        setError('Muitas tentativas. Aguarde alguns minutos antes de tentar novamente.');
+      } else if (err.message?.includes('User already registered')) {
+        setError('Este email já está cadastrado. Tente fazer login.');
+        setTimeout(() => navigate('/login', { state: { email } }), 2000);
+      } else if (err.message?.includes('Invalid email')) {
+        setError('Email inválido. Verifique o endereço informado.');
+      } else if (err.message?.includes('Password should be at least 6 characters')) {
+        setError('A senha deve ter pelo menos 6 caracteres.');
+      } else {
+        setError(err.message || 'Erro ao criar conta. Tente novamente.');
+      }
+      
       setIsLoading(false);
       
       // Remover classe de loading em caso de erro
@@ -323,6 +367,7 @@ const RegisterPage = () => {
       if (formElement) {
         formElement.classList.remove('form-loading');
       }
+      document.body.classList.remove('overflow-hidden');
     }
   };
 

@@ -92,36 +92,57 @@ export const loginUser = async (email: string, password: string) => {
   }
 };
 
-export const registerUser = async (email: string, password: string, name?: string) => {
+export const registerUser = async (email: string, password: string, name?: string, metadata?: Record<string, any>) => {
   try {
     // Validação
-    if (!validateEmail(email)) {
+    const sanitizedEmail = sanitizeEmail(email);
+    
+    if (!validateEmail(sanitizedEmail)) {
       throw new Error('Email inválido');
     }
     
     if (!validatePassword(password)) {
-      throw new Error('Senha deve ter pelo menos 6 caracteres');
+      throw new Error('Senha deve ter entre 6 e 128 caracteres');
     }
 
-    // Sanitizar dados
-    const cleanEmail = sanitizeEmail(email);
-
-    const { data, error } = await supabase.auth.signUp({
-      email: cleanEmail,
+    const signUpData: any = {
+      email: sanitizedEmail,
       password,
       options: {
         emailRedirectTo: `${window.location.origin}/`,
-        data: name ? { full_name: name } : undefined
+        data: {
+          full_name: name || '',
+          ...metadata
+        }
       }
-    });
+    };
+
+    console.log('AuthService: Tentando registro para:', sanitizedEmail.substring(0, 3) + '***');
+
+    const { data, error } = await supabase.auth.signUp(signUpData);
 
     if (error) {
       console.error('Erro no registro:', error);
+      
+      // Melhor tratamento de erros específicos
+      if (error.message === 'User already registered') {
+        throw new Error('Este email já está cadastrado');
+      } else if (error.message === 'Signup is disabled') {
+        throw new Error('Cadastro temporariamente desabilitado');
+      } else if (error.message === 'Invalid email') {
+        throw new Error('Email inválido');
+      } else if (error.message?.includes('Password should be at least 6 characters')) {
+        throw new Error('A senha deve ter pelo menos 6 caracteres');
+      } else if (error.message?.includes('rate limit')) {
+        throw new Error('Muitas tentativas. Aguarde alguns minutos.');
+      }
+      
       throw error;
     }
 
+    console.log('AuthService: Registro bem-sucedido');
     return { user: data.user, session: data.session };
-  } catch (error) {
+  } catch (error: any) {
     console.error('Erro no registerUser:', error);
     throw error;
   }
