@@ -108,10 +108,23 @@ serve(async (req) => {
       }
     }
 
-    // Envia cada lembrete para o N8N
+    // Envia cada lembrete para o N8N e registra o uso
     const sendResults = []
+    const currentMonth = new Date().toISOString().substring(0, 7) // YYYY-MM
+    
     for (const reminder of remindersToSend) {
       try {
+        // Registra o uso do lembrete na tabela de controle
+        const { error: usageError } = await supabaseClient.rpc('increment_reminder_usage', {
+          p_user_id: reminder.user.id
+        })
+        
+        if (usageError) {
+          console.error('Erro ao registrar uso do lembrete:', usageError)
+        } else {
+          console.log(`Uso de lembrete registrado para usuário: ${reminder.user.id}`)
+        }
+
         // Prepara o payload para o N8N
         const payload = {
           type: 'appointment_reminder',
@@ -151,7 +164,8 @@ serve(async (req) => {
           appointmentId: reminder.appointment.id,
           title: reminder.appointment.title,
           success: response.ok,
-          status: response.status
+          status: response.status,
+          usageRegistered: !usageError
         })
 
         if (!response.ok) {
@@ -163,7 +177,8 @@ serve(async (req) => {
           appointmentId: reminder.appointment.id,
           title: reminder.appointment.title,
           success: false,
-          error: error.message
+          error: error.message,
+          usageRegistered: false
         })
       }
     }

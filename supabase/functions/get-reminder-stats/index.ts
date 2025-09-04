@@ -10,18 +10,24 @@ const corsHeaders = {
 interface ReminderStats {
   totalUsers: number;
   activeReminders: number;
-  monthlyUsage: {
-    basic: number;
-    pro: number;
-  };
+  totalMonthlyUsage: number;
   planDistribution: {
-    basic: number;
-    pro: number;
+    basic: { users: number; usage: number; limit: number };
+    pro: { users: number; usage: number; limit: number };
   };
-  currentMonth: string;
+  currentMonth: {
+    monthKey: string;
+    totalUsage: number;
+    totalUsers: number;
+  };
   limits: {
     basic: number;
     pro: number;
+  };
+  appointmentsWithReminders: number;
+  recentActivity: {
+    lastReminderSent: string | null;
+    totalActiveUsers: number;
   };
 }
 
@@ -75,6 +81,14 @@ serve(async (req) => {
       .select('*')
       .eq('month_year', currentMonth)
 
+    // Get compromissos ativos com lembretes habilitados
+    const { data: appointmentsData } = await supabaseClient
+      .from('poupeja_appointments')
+      .select('id, user_id, reminder_enabled, status, appointment_date')
+      .eq('reminder_enabled', true)
+      .eq('status', 'pending')
+      .gte('appointment_date', new Date().toISOString())
+
     // Get total number of users
     const { count: totalUsers } = await supabaseClient
       .from('poupeja_users')
@@ -96,16 +110,12 @@ serve(async (req) => {
       .single()
 
     const basicLimit = parseInt(basicLimitSetting?.value || '15')
-    const proLimit = parseInt(proLimitSetting?.value || '50')
+    const proLimit = parseInt(proLimitSetting?.value || '100')
 
-    // Process plan distribution
-    const basicUsers = subscriptions?.filter(s => 
-      s.plan_type?.includes('monthly') && !s.plan_type?.includes('pro')
-    ).length || 0
-
-    const proUsers = subscriptions?.filter(s => 
-      s.plan_type?.includes('pro')
-    ).length || 0
+    // Process plan distribution - contar usuários por plano corretamente
+    const totalSubscriptions = subscriptions?.length || 0
+    const basicUsers = Math.max(0, (totalUsers || 0) - totalSubscriptions) // Usuários sem subscrição = basic
+    const proUsers = subscriptions?.filter(s => s.plan_type?.includes('pro')).length || 0
 
     // Process monthly usage by plan
     let basicUsage = 0
@@ -114,34 +124,43 @@ serve(async (req) => {
     if (reminderUsage && subscriptions) {
       for (const usage of reminderUsage) {
         const userSubscription = subscriptions.find(s => s.user_id === usage.user_id)
-        if (userSubscription) {
-          if (userSubscription.plan_type?.includes('pro')) {
-            proUsage += usage.reminders_used || 0
-          } else {
-            basicUsage += usage.reminders_used || 0
-          }
+        if (userSubscription && userSubscription.plan_type?.includes('pro')) {
+          proUsage += usage.reminders_used || 0
         } else {
-          // User without subscription counts as basic
           basicUsage += usage.reminders_used || 0
         }
       }
     }
 
+    // Calcular métricas adicionais
+    const totalUsageThisMonth = basicUsage + proUsage
+    const activeReminders = appointmentsData?.length || 0 // Compromissos com lembretes habilitados
+    const totalActiveUsers = new Set(appointmentsData?.map(a => a.user_id) || []).size
+    const lastReminderSent = reminderUsage && reminderUsage.length > 0 
+      ? reminderUsage.sort((a, b) => new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime())[0]?.updated_at
+      : null
+
     const stats: ReminderStats = {
       totalUsers: totalUsers || 0,
-      activeReminders: reminderUsage?.length || 0,
-      monthlyUsage: {
-        basic: basicUsage,
-        pro: proUsage,
-      },
+      activeReminders,
+      totalMonthlyUsage: totalUsageThisMonth,
       planDistribution: {
-        basic: basicUsers,
-        pro: proUsers,
+        basic: { users: basicUsers, usage: basicUsage, limit: basicLimit },
+        pro: { users: proUsers, usage: proUsage, limit: proLimit }
       },
-      currentMonth,
+      currentMonth: {
+        monthKey: currentMonth,
+        totalUsage: totalUsageThisMonth,
+        totalUsers: reminderUsage?.length || 0
+      },
       limits: {
         basic: basicLimit,
         pro: proLimit,
+      },
+      appointmentsWithReminders: appointmentsData?.length || 0,
+      recentActivity: {
+        lastReminderSent,
+        totalActiveUsers
       }
     }
 

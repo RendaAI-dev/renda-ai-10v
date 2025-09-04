@@ -20,18 +20,24 @@ import { useUserRole } from '@/hooks/useUserRole';
 interface ReminderStats {
   totalUsers: number;
   activeReminders: number;
-  monthlyUsage: {
-    basic: number;
-    pro: number;
-  };
+  totalMonthlyUsage: number;
   planDistribution: {
-    basic: number;
-    pro: number;
+    basic: { users: number; usage: number; limit: number };
+    pro: { users: number; usage: number; limit: number };
   };
-  currentMonth: string;
+  currentMonth: {
+    monthKey: string;
+    totalUsage: number;
+    totalUsers: number;
+  };
   limits: {
     basic: number;
     pro: number;
+  };
+  appointmentsWithReminders: number;
+  recentActivity: {
+    lastReminderSent: string | null;
+    totalActiveUsers: number;
   };
 }
 
@@ -175,8 +181,8 @@ const ReminderControlManager: React.FC = () => {
             <div className="flex items-center gap-2">
               <Bell className="h-5 w-5 text-green-600" />
               <div>
-                <p className="text-2xl font-bold">{stats?.activeReminders || 0}</p>
-                <p className="text-sm text-gray-600">Lembretes Ativos</p>
+                <p className="text-2xl font-bold">{stats?.appointmentsWithReminders || 0}</p>
+                <p className="text-sm text-gray-600">Compromissos c/ Lembretes</p>
               </div>
             </div>
           </CardContent>
@@ -187,7 +193,7 @@ const ReminderControlManager: React.FC = () => {
             <div className="flex items-center gap-2">
               <BarChart3 className="h-5 w-5 text-purple-600" />
               <div>
-                <p className="text-2xl font-bold">{(stats?.monthlyUsage.basic || 0) + (stats?.monthlyUsage.pro || 0)}</p>
+                <p className="text-2xl font-bold">{stats?.totalMonthlyUsage || 0}</p>
                 <p className="text-sm text-gray-600">Uso Mensal Total</p>
               </div>
             </div>
@@ -199,13 +205,44 @@ const ReminderControlManager: React.FC = () => {
             <div className="flex items-center gap-2">
               <Calendar className="h-5 w-5 text-orange-600" />
               <div>
-                <p className="text-2xl font-bold">{stats?.currentMonth || new Date().toISOString().slice(0, 7)}</p>
-                <p className="text-sm text-gray-600">Mês Atual</p>
+                <p className="text-2xl font-bold">{stats?.recentActivity.totalActiveUsers || 0}</p>
+                <p className="text-sm text-gray-600">Usuários com Lembretes</p>
               </div>
             </div>
           </CardContent>
         </Card>
       </div>
+
+      {/* Informações do Mês Atual */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Calendar className="h-5 w-5" />
+            Atividade do Mês Atual ({stats?.currentMonth.monthKey || new Date().toISOString().slice(0, 7)})
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="text-center p-4 border rounded-lg">
+              <p className="text-2xl font-bold text-blue-600">{stats?.currentMonth.totalUsage || 0}</p>
+              <p className="text-sm text-gray-600">Lembretes Enviados</p>
+            </div>
+            <div className="text-center p-4 border rounded-lg">
+              <p className="text-2xl font-bold text-green-600">{stats?.currentMonth.totalUsers || 0}</p>
+              <p className="text-sm text-gray-600">Usuários Ativos</p>
+            </div>
+            <div className="text-center p-4 border rounded-lg">
+              <p className="text-lg text-gray-600">
+                {stats?.recentActivity.lastReminderSent 
+                  ? new Date(stats.recentActivity.lastReminderSent).toLocaleString('pt-BR')
+                  : 'Nenhum lembrete enviado'
+                }
+              </p>
+              <p className="text-sm text-gray-600">Último Lembrete</p>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Distribuição por Planos */}
       <Card>
@@ -222,11 +259,11 @@ const ReminderControlManager: React.FC = () => {
               <div className="space-y-2">
                 <div className="flex justify-between">
                   <span className="text-sm">Usuários:</span>
-                  <span className="font-medium">{stats?.planDistribution.basic || 0}</span>
+                  <span className="font-medium">{stats?.planDistribution.basic.users || 0}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-sm">Uso Mensal:</span>
-                  <span className="font-medium">{stats?.monthlyUsage.basic || 0}</span>
+                  <span className="font-medium">{stats?.planDistribution.basic.usage || 0}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-sm">Limite:</span>
@@ -240,11 +277,11 @@ const ReminderControlManager: React.FC = () => {
               <div className="space-y-2">
                 <div className="flex justify-between">
                   <span className="text-sm">Usuários:</span>
-                  <span className="font-medium">{stats?.planDistribution.pro || 0}</span>
+                  <span className="font-medium">{stats?.planDistribution.pro.users || 0}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-sm">Uso Mensal:</span>
-                  <span className="font-medium">{stats?.monthlyUsage.pro || 0}</span>
+                  <span className="font-medium">{stats?.planDistribution.pro.usage || 0}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-sm">Limite:</span>
