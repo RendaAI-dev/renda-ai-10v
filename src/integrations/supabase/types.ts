@@ -544,6 +544,8 @@ export type Database = {
       }
       poupeja_users: {
         Row: {
+          birth_date: string | null
+          cpf: string | null
           created_at: string | null
           email: string
           id: string
@@ -553,6 +555,8 @@ export type Database = {
           updated_at: string | null
         }
         Insert: {
+          birth_date?: string | null
+          cpf?: string | null
           created_at?: string | null
           email: string
           id: string
@@ -562,6 +566,8 @@ export type Database = {
           updated_at?: string | null
         }
         Update: {
+          birth_date?: string | null
+          cpf?: string | null
           created_at?: string | null
           email?: string
           id?: string

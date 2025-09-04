@@ -4,13 +4,14 @@ import { usePreferences } from '@/contexts/PreferencesContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Form, FormField, FormItem, FormLabel, FormControl, FormMessage } from '@/components/ui/form';
-import { Eye, EyeOff, Mail, Lock, User, Phone } from 'lucide-react';
+import { Eye, EyeOff, Mail, Lock, User, Phone, CreditCard, Calendar } from 'lucide-react';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
 import * as z from 'zod';
+import { validateCPF, formatCPF, validateAge } from "@/utils/cpfValidation";
 
 interface AuthFormProps {
-  onSubmit: (email: string, password: string, name?: string, phone?: string) => void;
+  onSubmit: (email: string, password: string, name?: string, phone?: string, cpf?: string, birthDate?: string) => void;
   isLogin: boolean;
   isLoading?: boolean;
   submitText?: string;
@@ -38,6 +39,12 @@ const AuthForm: React.FC<AuthFormProps> = ({
     phone: z.string().optional(),
     email: z.string().email(t('auth.emailValid')),
     password: z.string().min(6, t('auth.passwordLength')),
+    cpf: z.string().optional().refine((val) => !val || validateCPF(val), {
+      message: "CPF inválido"
+    }),
+    birthDate: z.string().optional().refine((val) => !val || validateAge(val), {
+      message: "Você deve ter pelo menos 18 anos"
+    }),
   });
   
   // Initialize form with react-hook-form and zod validation
@@ -45,14 +52,14 @@ const AuthForm: React.FC<AuthFormProps> = ({
     resolver: zodResolver(isLogin ? loginSchema : registerSchema),
     defaultValues: isLogin 
       ? { email: '', password: '' }
-      : { name: '', phone: '', email: '', password: '' },
+      : { name: '', phone: '', email: '', password: '', cpf: '', birthDate: '' },
   });
 
   const handleSubmit = (values: any) => {
     if (isLogin) {
       onSubmit(values.email, values.password);
     } else {
-      onSubmit(values.email, values.password, values.name, values.phone);
+      onSubmit(values.email, values.password, values.name, values.phone, values.cpf, values.birthDate);
     }
   };
 
@@ -106,6 +113,60 @@ const AuthForm: React.FC<AuthFormProps> = ({
                   <p className="text-xs text-muted-foreground">
                     {t('auth.phoneFormat') || 'Format: country code + area code + number (e.g. 5511999999999)'}
                   </p>
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="cpf"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>
+                    CPF <span className="text-muted-foreground text-sm">(opcional)</span>
+                  </FormLabel>
+                  <FormControl>
+                    <div className="relative">
+                      <CreditCard className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground h-4 w-4" />
+                      <Input
+                        {...field}
+                        placeholder="000.000.000-00"
+                        className="pl-10"
+                        type="text"
+                        maxLength={14}
+                        onChange={(e) => {
+                          const formatted = formatCPF(e.target.value);
+                          field.onChange(formatted);
+                        }}
+                      />
+                    </div>
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="birthDate"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>
+                    Data de Nascimento <span className="text-muted-foreground text-sm">(opcional)</span>
+                  </FormLabel>
+                  <FormControl>
+                    <div className="relative">
+                      <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground h-4 w-4" />
+                      <Input
+                        {...field}
+                        placeholder="dd/mm/aaaa"
+                        className="pl-10"
+                        type="date"
+                        max={new Date(Date.now() - 18 * 365 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]}
+                      />
+                    </div>
+                  </FormControl>
+                  <FormMessage />
                 </FormItem>
               )}
             />

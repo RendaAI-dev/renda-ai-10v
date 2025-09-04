@@ -7,6 +7,7 @@ import { Label } from '@/components/ui/label';
 import { useToast } from "@/hooks/use-toast";
 import { getPlanTypeFromPriceId } from '@/utils/subscriptionUtils';
 import { useBrandingConfig } from '@/hooks/useBrandingConfig';
+import { validateCPF, formatCPF, cleanCPF, validateAge } from "@/utils/cpfValidation";
 
 const RegisterPage = () => {
   const [searchParams] = useSearchParams();
@@ -18,6 +19,8 @@ const RegisterPage = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [whatsapp, setWhatsapp] = useState('');
+  const [cpf, setCpf] = useState('');
+  const [birthDate, setBirthDate] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
@@ -113,6 +116,12 @@ const RegisterPage = () => {
     setWhatsapp(formattedValue);
   };
 
+  // Função para lidar com a mudança no campo de CPF
+  const handleCpfChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const formattedValue = formatCPF(e.target.value);
+    setCpf(formattedValue);
+  };
+
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setIsLoading(true);
@@ -133,19 +142,46 @@ const RegisterPage = () => {
     }
   
     try {
+      // Validar CPF se fornecido
+      if (cpf && !validateCPF(cpf)) {
+        setError("CPF inválido. Por favor, verifique o número digitado.");
+        setIsLoading(false);
+        formElement?.classList.remove('form-loading');
+        return;
+      }
+
+      // Validar data de nascimento se fornecida
+      if (birthDate && !validateAge(birthDate)) {
+        setError("Você deve ter pelo menos 18 anos para se cadastrar.");
+        setIsLoading(false);
+        formElement?.classList.remove('form-loading');
+        return;
+      }
+
       // Normaliza o número de telefone antes de enviar (remove caracteres não numéricos)
       const formattedPhone = whatsapp.replace(/\D/g, '');
-  
+
       console.log('Iniciando processo de registro...');
+
+      const userData: any = {
+        full_name: fullName,
+        phone: formattedPhone,
+      };
+
+      // Adicionar CPF e data de nascimento se fornecidos
+      if (cpf) {
+        userData.cpf = cleanCPF(cpf);
+      }
+
+      if (birthDate) {
+        userData.birth_date = birthDate;
+      }
       
       const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
         email,
         password,
         options: {
-          data: {
-            full_name: fullName,
-            phone: formattedPhone,
-          },
+          data: userData
         },
       });
   
@@ -389,6 +425,43 @@ const RegisterPage = () => {
             <p className="mt-2 text-xs text-gray-500">
               Este número será utilizado para enviar mensagens e notificações importantes via WhatsApp.
             </p>
+          </div>
+
+          <div>
+            <Label htmlFor="cpf">
+              CPF <span className="text-muted-foreground text-sm">(opcional)</span>
+            </Label>
+            <Input
+              id="cpf"
+              name="cpf"
+              type="text"
+              placeholder="000.000.000-00"
+              value={cpf}
+              onChange={handleCpfChange}
+              className="mt-1"
+              maxLength={14}
+            />
+            {cpf && !validateCPF(cpf) && (
+              <p className="mt-1 text-xs text-red-600">CPF inválido</p>
+            )}
+          </div>
+
+          <div>
+            <Label htmlFor="birthDate">
+              Data de Nascimento <span className="text-muted-foreground text-sm">(opcional)</span>
+            </Label>
+            <Input
+              id="birthDate"
+              name="birthDate"
+              type="date"
+              value={birthDate}
+              onChange={(e) => setBirthDate(e.target.value)}
+              className="mt-1"
+              max={new Date(Date.now() - 18 * 365 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]}
+            />
+            {birthDate && !validateAge(birthDate) && (
+              <p className="mt-1 text-xs text-red-600">Você deve ter pelo menos 18 anos</p>
+            )}
           </div>
 
           <div>
