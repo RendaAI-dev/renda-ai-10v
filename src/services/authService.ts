@@ -94,41 +94,55 @@ export const loginUser = async (email: string, password: string) => {
 
 export const registerUser = async (email: string, password: string, name?: string) => {
   try {
-    // Sanitize and validate inputs
-    const sanitizedEmail = sanitizeEmail(email);
-    const sanitizedName = name ? name.trim().substring(0, 100) : undefined; // Limit name length
-    
-    if (!validateEmail(sanitizedEmail)) {
+    // Validação
+    if (!validateEmail(email)) {
       throw new Error('Email inválido');
     }
     
     if (!validatePassword(password)) {
-      throw new Error('Senha deve ter entre 6 e 128 caracteres');
+      throw new Error('Senha deve ter pelo menos 6 caracteres');
     }
-    
-    console.log("AuthService: Attempting registration for:", sanitizedEmail.substring(0, 3) + '***');
-    
+
+    // Sanitizar dados
+    const cleanEmail = sanitizeEmail(email);
+
     const { data, error } = await supabase.auth.signUp({
-      email: sanitizedEmail,
+      email: cleanEmail,
       password,
       options: {
-        data: {
-          name: sanitizedName
-        },
-        emailRedirectTo: `${window.location.origin}/`
+        emailRedirectTo: `${window.location.origin}/`,
+        data: name ? { full_name: name } : undefined
       }
     });
-    
+
     if (error) {
-      console.error("AuthService: Registration error:", error);
+      console.error('Erro no registro:', error);
       throw error;
     }
-    
-    console.log("AuthService: Registration successful");
-    return data;
+
+    return { user: data.user, session: data.session };
   } catch (error) {
-    console.error("AuthService: Registration error:", error);
+    console.error('Erro no registerUser:', error);
     throw error;
+  }
+};
+
+// Nova função para confirmar usuário via admin (se necessário)
+export const confirmUserEmail = async (email: string): Promise<boolean> => {
+  try {
+    const { data, error } = await supabase.functions.invoke('confirm-user-email', {
+      body: { email }
+    });
+
+    if (error) {
+      console.error('Erro ao confirmar email:', error);
+      return false;
+    }
+
+    return data?.success || false;
+  } catch (error) {
+    console.error('Erro na confirmação de email:', error);
+    return false;
   }
 };
 

@@ -26,73 +26,40 @@ const RegisterPage = () => {
 
   const priceId = searchParams.get('priceId');
 
-  // Função para aguardar uma sessão válida ser estabelecida
-  const waitForValidSession = async (maxRetries = 20, retryDelay = 1500): Promise<any> => {
-    console.log(`[waitForValidSession] Iniciando com ${maxRetries} tentativas a cada ${retryDelay}ms`);
-    
-    for (let attempt = 1; attempt <= maxRetries; attempt++) {
-      console.log(`[waitForValidSession] Tentativa ${attempt}/${maxRetries} - Verificando sessão...`);
+  const waitForSession = (): Promise<boolean> => {
+    return new Promise((resolve) => {
+      let resolved = false;
       
-      try {
-        // Verificação dupla: getSession E getUser
-        const [sessionResult, userResult] = await Promise.all([
-          supabase.auth.getSession(),
-          supabase.auth.getUser()
-        ]);
-        
-        const { data: { session }, error: sessionError } = sessionResult;
-        const { data: { user }, error: userError } = userResult;
-        
-        if (sessionError) {
-          console.error(`[waitForValidSession] Erro de sessão na tentativa ${attempt}:`, sessionError);
-          if (attempt === maxRetries) throw sessionError;
-          await new Promise(resolve => setTimeout(resolve, retryDelay));
-          continue;
+      // Timeout após 30 segundos
+      const timeout = setTimeout(() => {
+        if (!resolved) {
+          resolved = true;
+          resolve(false);
         }
-        
-        if (userError) {
-          console.error(`[waitForValidSession] Erro de usuário na tentativa ${attempt}:`, userError);
-          if (attempt === maxRetries) throw userError;
-          await new Promise(resolve => setTimeout(resolve, retryDelay));
-          continue;
+      }, 30000);
+      
+      // Listener para mudanças de sessão
+      const { data: { subscription } } = supabase.auth.onAuthStateChange(
+        (event, session) => {
+          if (!resolved && session?.user) {
+            resolved = true;
+            clearTimeout(timeout);
+            subscription.unsubscribe();
+            resolve(true);
+          }
         }
-        
-        // Verificar se temos sessão E usuário válidos
-        if (session?.access_token && session?.user?.id && user?.id) {
-          console.log(`[waitForValidSession] ✅ Sessão e usuário válidos encontrados na tentativa ${attempt}:`, {
-            sessionUserId: session.user.id,
-            userDataId: user.id,
-            email: session.user.email,
-            tokenLength: session.access_token.length,
-            userConfirmed: user.email_confirmed_at ? 'Sim' : 'Não'
-          });
-          return session;
+      );
+      
+      // Verificar sessão atual uma vez
+      supabase.auth.getSession().then(({ data: { session } }) => {
+        if (!resolved && session?.user) {
+          resolved = true;
+          clearTimeout(timeout);
+          subscription.unsubscribe();
+          resolve(true);
         }
-        
-        console.log(`[waitForValidSession] ⏳ Tentativa ${attempt}: Aguardando sessão e usuário serem estabelecidos`, {
-          hasSession: !!session,
-          hasToken: !!session?.access_token,
-          hasSessionUser: !!session?.user?.id,
-          hasUser: !!user?.id
-        });
-        
-        // Tentar refresh da sessão nas últimas tentativas
-        if (attempt > maxRetries - 3) {
-          console.log(`[waitForValidSession] 🔄 Tentativa ${attempt}: Fazendo refresh da sessão`);
-          await supabase.auth.refreshSession();
-        }
-        
-        if (attempt < maxRetries) {
-          await new Promise(resolve => setTimeout(resolve, retryDelay));
-        }
-      } catch (error) {
-        console.error(`[waitForValidSession] Erro inesperado na tentativa ${attempt}:`, error);
-        if (attempt === maxRetries) throw error;
-        await new Promise(resolve => setTimeout(resolve, retryDelay));
-      }
-    }
-    
-    throw new Error('Timeout: Não foi possível estabelecer uma sessão válida após 30 segundos');
+      });
+    });
   };
 
   // Função para formatar o número de telefone como (XX) XXXXX-XXXX
@@ -177,87 +144,39 @@ const RegisterPage = () => {
         userData.birth_date = birthDate;
       }
       
-      const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
+      console.log('🚀 Iniciando processo de cadastro...');
+      
+      const { data: authData, error: authError } = await supabase.auth.signUp({
         email,
         password,
         options: {
+          emailRedirectTo: `${window.location.origin}/`,
           data: userData
-        },
-      });
-  
-      if (signUpError) {
-        throw signUpError;
-      }
-
-      if (!signUpData.user) {
-        throw new Error('Usuário não retornado após o cadastro.');
-      }
-
-      console.log('Usuário criado com sucesso');
-      
-      // Mostrar feedback de progresso
-      toast({
-        title: "Conta criada com sucesso!",
-        description: "Aguardando estabelecer sessão...",
-      });
-
-      // Aguardar que a sessão seja estabelecida
-      console.log('🚀 Aguardando estabelecer sessão após registro...');
-      let validSession;
-      try {
-        validSession = await waitForValidSession(20, 1500);
-        console.log('✅ Sessão estabelecida com sucesso!');
-      } catch (sessionError) {
-        console.error('❌ Erro ao aguardar sessão:', sessionError);
-        
-        // FALLBACK: Tentar login automático
-        console.log('🔄 Tentando fallback com login automático...');
-        try {
-          const { data: loginData, error: loginError } = await supabase.auth.signInWithPassword({
-            email,
-            password,
-          });
-          
-          if (loginError) throw loginError;
-          
-          if (loginData.session) {
-            console.log('✅ Login automático bem-sucedido!');
-            validSession = loginData.session;
-            
-            toast({
-              title: "Conta criada e login realizado!",
-              description: "Prosseguindo para checkout...",
-            });
-          } else {
-            throw new Error('Login automático falhou');
-          }
-        } catch (loginError) {
-          console.error('❌ Fallback de login também falhou:', loginError);
-          
-          // Último recurso: redirecionar para login manual
-          toast({
-            title: "Conta criada com sucesso!",
-            description: "Redirecionando para fazer login...",
-          });
-          
-          setTimeout(() => {
-            navigate('/login', { 
-              state: { 
-                email, 
-                message: "Sua conta foi criada! Faça login para continuar com o pagamento." 
-              } 
-            });
-          }, 2000);
-          return;
         }
+      });
+
+      if (authError) {
+        console.error('❌ Erro na criação do usuário:', authError);
+        throw authError;
       }
 
-      // Verificar se temos uma sessão válida
-      if (!validSession?.access_token || !validSession?.user?.id) {
-        throw new Error('Sessão inválida após registro. Tente fazer login manualmente.');
+      console.log('✅ Usuário criado com sucesso:', authData.user?.id);
+
+      // Aguardar sessão válida - método simplificado
+      console.log('🔄 Aguardando confirmação da sessão...');
+      const sessionValid = await waitForSession();
+      
+      if (!sessionValid) {
+        console.log('⚠️ Sessão não confirmada, redirecionando para login...');
+        throw new Error('Email criado com sucesso! Faça login para continuar.');
       }
 
-      console.log('Sessão estabelecida com sucesso, preparando checkout...');
+      // Obter sessão atual para o checkout
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (!session?.access_token) {
+        throw new Error('Sessão inválida após registro');
+      }
       
       // Converter priceId para planType
       const planType = await getPlanTypeFromPriceId(priceId);
@@ -277,11 +196,11 @@ const RegisterPage = () => {
       const { data: functionData, error: functionError } = await supabase.functions.invoke('create-checkout-session', {
         body: { 
           planType,
-          successUrl: `${window.location.origin}/payment-success?email=${encodeURIComponent(validSession.user.email || '')}`,
+          successUrl: `${window.location.origin}/payment-success?email=${encodeURIComponent(session.user.email || '')}`,
           cancelUrl: `${window.location.origin}/register?canceled=true`
         },
         headers: {
-          Authorization: `Bearer ${validSession.access_token}`,
+          Authorization: `Bearer ${session.access_token}`,
         }
       });
       
