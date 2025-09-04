@@ -8,6 +8,7 @@ interface PlanConfig {
       priceId: string;
       price: string;
       displayPrice: string;
+      reminderLimit: number;
     };
     annual: {
       priceId: string;
@@ -17,6 +18,23 @@ interface PlanConfig {
       displayPrice: string;
       displayOriginalPrice: string;
       displaySavings: string;
+      reminderLimit: number;
+    };
+    monthly_pro: {
+      priceId: string;
+      price: string;
+      displayPrice: string;
+      reminderLimit: number;
+    };
+    annual_pro: {
+      priceId: string;
+      price: string;
+      originalPrice: string;
+      savings: string;
+      displayPrice: string;
+      displayOriginalPrice: string;
+      displaySavings: string;
+      reminderLimit: number;
     };
   };
   contact: {
@@ -61,11 +79,19 @@ export const usePlanConfig = () => {
           // Calcular valores derivados
           const monthlyPrice = settings.plan_price_monthly || '';
           const annualPrice = settings.plan_price_annual || '';
+          const monthlyProPrice = settings.plan_price_monthly_pro || '';
+          const annualProPrice = settings.plan_price_annual_pro || '';
+          
           const monthlyValue = parseFloat(monthlyPrice.toString().replace(',', '.'));
           const annualValue = parseFloat(annualPrice.toString().replace(',', '.'));
+          const monthlyProValue = parseFloat(monthlyProPrice.toString().replace(',', '.'));
+          const annualProValue = parseFloat(annualProPrice.toString().replace(',', '.'));
           
+          // Calcular equivalentes e descontos
           let monthlyEquivalent = '';
           let discountPercentage = '';
+          let monthlyProEquivalent = '';
+          let discountProPercentage = '';
           
           if (monthlyValue && annualValue) {
             const yearlyEquivalent = monthlyValue * 12;
@@ -74,12 +100,20 @@ export const usePlanConfig = () => {
             discountPercentage = discount.toFixed(0);
           }
           
+          if (monthlyProValue && annualProValue) {
+            const yearlyProEquivalent = monthlyProValue * 12;
+            monthlyProEquivalent = (yearlyProEquivalent).toFixed(2).replace('.', ',');
+            const discountPro = ((yearlyProEquivalent - annualProValue) / yearlyProEquivalent) * 100;
+            discountProPercentage = discountPro.toFixed(0);
+          }
+          
           const planConfig: PlanConfig = {
             prices: {
               monthly: {
                 priceId: priceData.prices.monthly || '',
                 price: monthlyPrice,
                 displayPrice: monthlyPrice ? `R$ ${monthlyPrice}` : 'R$ -',
+                reminderLimit: 15,
               },
               annual: {
                 priceId: priceData.prices.annual || '',
@@ -89,6 +123,23 @@ export const usePlanConfig = () => {
                 displayPrice: annualPrice ? `R$ ${annualPrice}` : 'R$ -',
                 displayOriginalPrice: monthlyEquivalent ? `R$ ${monthlyEquivalent}` : 'R$ -',
                 displaySavings: discountPercentage ? `Economize ${discountPercentage}%` : 'Economize -%',
+                reminderLimit: 15,
+              },
+              monthly_pro: {
+                priceId: priceData.prices.monthly_pro || '',
+                price: monthlyProPrice,
+                displayPrice: monthlyProPrice ? `R$ ${monthlyProPrice}` : 'R$ -',
+                reminderLimit: 50,
+              },
+              annual_pro: {
+                priceId: priceData.prices.annual_pro || '',
+                price: annualProPrice,
+                originalPrice: monthlyProEquivalent,
+                savings: discountProPercentage,
+                displayPrice: annualProPrice ? `R$ ${annualProPrice}` : 'R$ -',
+                displayOriginalPrice: monthlyProEquivalent ? `R$ ${monthlyProEquivalent}` : 'R$ -',
+                displaySavings: discountProPercentage ? `Economize ${discountProPercentage}%` : 'Economize -%',
+                reminderLimit: 50,
               }
             },
             contact: {
@@ -113,6 +164,7 @@ export const usePlanConfig = () => {
               priceId: '',
               price: '',
               displayPrice: 'R$ -',
+              reminderLimit: 15,
             },
             annual: {
               priceId: '',
@@ -122,6 +174,23 @@ export const usePlanConfig = () => {
               displayPrice: 'R$ -',
               displayOriginalPrice: 'R$ -',
               displaySavings: 'Economize -%',
+              reminderLimit: 15,
+            },
+            monthly_pro: {
+              priceId: '',
+              price: '',
+              displayPrice: 'R$ -',
+              reminderLimit: 50,
+            },
+            annual_pro: {
+              priceId: '',
+              price: '',
+              originalPrice: '',
+              savings: '',
+              displayPrice: 'R$ -',
+              displayOriginalPrice: 'R$ -',
+              displaySavings: 'Economize -%',
+              reminderLimit: 50,
             }
           },
           contact: {

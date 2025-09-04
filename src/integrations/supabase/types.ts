@@ -208,6 +208,33 @@ export type Database = {
         }
         Relationships: []
       }
+      poupeja_reminder_usage: {
+        Row: {
+          created_at: string
+          id: string
+          month_year: string
+          reminders_used: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          month_year: string
+          reminders_used?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          month_year?: string
+          reminders_used?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       poupeja_scheduled_transactions: {
         Row: {
           amount: number
@@ -383,6 +410,7 @@ export type Database = {
           current_period_start: string | null
           id: string
           plan_type: string
+          reminder_limit: number | null
           status: string
           stripe_customer_id: string | null
           stripe_subscription_id: string | null
@@ -396,6 +424,7 @@ export type Database = {
           current_period_start?: string | null
           id?: string
           plan_type: string
+          reminder_limit?: number | null
           status: string
           stripe_customer_id?: string | null
           stripe_subscription_id?: string | null
@@ -409,6 +438,7 @@ export type Database = {
           current_period_start?: string | null
           id?: string
           plan_type?: string
+          reminder_limit?: number | null
           status?: string
           stripe_customer_id?: string | null
           stripe_subscription_id?: string | null
@@ -628,6 +658,10 @@ export type Database = {
         Args: { file_extension: string; user_id: string }
         Returns: string
       }
+      get_current_month_usage: {
+        Args: { p_user_id?: string }
+        Returns: number
+      }
       get_file_public_url: {
         Args: { file_path: string }
         Returns: string
@@ -645,6 +679,10 @@ export type Database = {
           value: string
           value_type: string
         }[]
+      }
+      get_user_reminder_limit: {
+        Args: { p_user_id?: string }
+        Returns: number
       }
       get_user_subscription_status: {
         Args: { p_user_id?: string }
@@ -720,6 +758,10 @@ export type Database = {
       }
       http_set_curlopt: {
         Args: { curlopt: string; value: string }
+        Returns: boolean
+      }
+      increment_reminder_usage: {
+        Args: { p_user_id?: string }
         Returns: boolean
       }
       is_admin: {

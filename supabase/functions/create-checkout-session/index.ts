@@ -142,8 +142,12 @@ serve(async (req) => {
       priceId = priceData.prices.monthly;
     } else if (planType === 'annual') {
       priceId = priceData.prices.annual;
+    } else if (planType === 'monthly_pro') {
+      priceId = priceData.prices.monthly_pro;
+    } else if (planType === 'annual_pro') {
+      priceId = priceData.prices.annual_pro;
     } else {
-      throw new Error("Tipo de plano inválido. Deve ser 'monthly' ou 'annual'");
+      throw new Error("Tipo de plano inválido. Deve ser 'monthly', 'annual', 'monthly_pro' ou 'annual_pro'");
     }
     
     logStep("Using priceId from database", { priceId, planType });
@@ -155,7 +159,9 @@ serve(async (req) => {
     // Verificar se o priceId corresponde a um dos valores esperados
     const validPriceIds = [
       priceData.prices.monthly,
-      priceData.prices.annual
+      priceData.prices.annual,
+      priceData.prices.monthly_pro,
+      priceData.prices.annual_pro
     ];
     
     if (!validPriceIds.includes(priceId)) {

@@ -34,7 +34,12 @@ serve(async (req) => {
     const { data, error } = await supabaseClient
       .from("poupeja_settings")
       .select("key, value")
-      .in("key", ["stripe_price_id_monthly", "stripe_price_id_annual"]);
+      .in("key", [
+        "stripe_price_id_monthly", 
+        "stripe_price_id_annual",
+        "stripe_price_id_monthly_pro",
+        "stripe_price_id_annual_pro"
+      ]);
 
     if (error) {
       logStep("ERROR: Failed to fetch settings", { error: error.message });
@@ -65,27 +70,35 @@ serve(async (req) => {
 
     logStep("Price settings processed", { settings: priceSettings });
 
-    // Validate that both required price IDs exist
+    // Validate that all required price IDs exist
     const monthlyPriceId = priceSettings.stripe_price_id_monthly;
     const annualPriceId = priceSettings.stripe_price_id_annual;
+    const monthlyProPriceId = priceSettings.stripe_price_id_monthly_pro;
+    const annualProPriceId = priceSettings.stripe_price_id_annual_pro;
 
-    if (!monthlyPriceId || !annualPriceId) {
-      logStep("ERROR: Missing required price IDs", {
-        hasMonthly: !!monthlyPriceId,
-        hasAnnual: !!annualPriceId
-      });
+    // Check if we have all 4 price IDs
+    const missingPrices = [];
+    if (!monthlyPriceId) missingPrices.push('monthly');
+    if (!annualPriceId) missingPrices.push('annual');
+    if (!monthlyProPriceId) missingPrices.push('monthly_pro');
+    if (!annualProPriceId) missingPrices.push('annual_pro');
+
+    if (missingPrices.length > 0) {
+      logStep("WARNING: Missing some price IDs", { missingPrices });
       return new Response(
         JSON.stringify({ 
           success: false, 
-          error: "Missing required Stripe price IDs in database",
-          details: {
-            monthly_missing: !monthlyPriceId,
-            annual_missing: !annualPriceId
+          error: `Missing Stripe price IDs: ${missingPrices.join(', ')}. Configure them in admin panel.`,
+          prices: {
+            monthly: monthlyPriceId || "",
+            annual: annualPriceId || "",
+            monthly_pro: monthlyProPriceId || "",
+            annual_pro: annualProPriceId || ""
           }
         }),
         {
           headers: { ...corsHeaders, "Content-Type": "application/json" },
-          status: 400,
+          status: 404,
         }
       );
     }
@@ -97,7 +110,9 @@ serve(async (req) => {
         success: true,
         prices: {
           monthly: monthlyPriceId,
-          annual: annualPriceId
+          annual: annualPriceId,
+          monthly_pro: monthlyProPriceId,
+          annual_pro: annualProPriceId
         }
       }),
       {

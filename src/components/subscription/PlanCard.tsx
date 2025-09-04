@@ -20,7 +20,8 @@ interface PlanCardProps {
   description: string;
   features: string[];
   popular?: boolean;
-  planType: 'monthly' | 'annual';
+  planType: 'monthly' | 'annual' | 'monthly_pro' | 'annual_pro';
+  reminderLimit?: number;
 }
 
 const PlanCard: React.FC<PlanCardProps> = ({
@@ -47,11 +48,21 @@ const PlanCard: React.FC<PlanCardProps> = ({
   // Verifica se é o plano atual mas está vencido (expirado)
   const isExpiredCurrentPlan = subscription?.plan_type === planType && !hasActiveSubscription;
   
-  // Verifica se pode fazer upgrade (está no plano mensal e visualizando o anual)
-  const canUpgrade = subscription?.plan_type === 'monthly' && planType === 'annual' && hasActiveSubscription;
+  // Verifica se pode fazer upgrade
+  const canUpgrade = (
+    (subscription?.plan_type === 'monthly' && planType === 'annual') ||
+    (subscription?.plan_type === 'monthly' && planType === 'monthly_pro') ||
+    (subscription?.plan_type === 'annual' && planType === 'annual_pro') ||
+    (subscription?.plan_type === 'monthly_pro' && planType === 'annual_pro')
+  ) && hasActiveSubscription;
   
-  // Verifica se pode fazer downgrade (está no plano anual e visualizando o mensal)
-  const canDowngrade = subscription?.plan_type === 'annual' && planType === 'monthly' && hasActiveSubscription;
+  // Verifica se pode fazer downgrade
+  const canDowngrade = (
+    (subscription?.plan_type === 'annual' && planType === 'monthly') ||
+    (subscription?.plan_type === 'monthly_pro' && planType === 'monthly') ||
+    (subscription?.plan_type === 'annual_pro' && planType === 'annual') ||
+    (subscription?.plan_type === 'annual_pro' && planType === 'monthly_pro')
+  ) && hasActiveSubscription;
   
   const handleCheckout = async () => {
     try {

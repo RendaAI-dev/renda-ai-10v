@@ -58,41 +58,74 @@ const PlansPage = () => {
 
   const plans = [
     {
-      name: t('plans.monthly'),
-      price: config?.prices.monthly.displayPrice || 'R$ 29,90',
+      name: 'Plano Básico',
+      price: config?.prices.monthly.displayPrice || 'R$ 14,90',
       period: "/mês",
       priceId: config?.prices.monthly.priceId,
-      description: "Para uso pessoal completo",
+      description: "Ideal para uso pessoal",
       features: [
-        t('plans.features.unlimited'), 
-        t('plans.features.dashboard'), 
-        t('plans.features.reports'), 
-        t('plans.features.goals'), 
-        t('plans.features.schedules'), 
-        t('plans.features.support')
+        'Controle completo de finanças',
+        'Relatórios básicos',
+        `Até ${config?.prices.monthly.reminderLimit || 15} lembretes por mês`,
+        'Suporte por email'
       ],
       planType: 'monthly' as const,
+      reminderLimit: config?.prices.monthly.reminderLimit || 15,
     },
     {
-      name: t('plans.annual'),
-      price: config?.prices.annual.displayPrice || 'R$ 177,00',
+      name: 'Plano Anual',
+      price: config?.prices.annual.displayPrice || 'R$ 124,90',
       period: "/ano",
       priceId: config?.prices.annual.priceId,
-      originalPrice: config?.prices.annual.displayOriginalPrice || 'R$ 238,80',
-      savings: config?.prices.annual.displaySavings || 'Economize 25%',
-      description: "Melhor custo-benefício",
+      originalPrice: config?.prices.annual.displayOriginalPrice || 'R$ 178,80',
+      savings: config?.prices.annual.displaySavings || 'Economize 30%',
+      description: "Economize com o plano anual",
       features: [
-        t('plans.features.unlimited'), 
-        t('plans.features.dashboard'), 
-        t('plans.features.reports'), 
-        t('plans.features.goals'), 
-        t('plans.features.schedules'), 
-        t('plans.features.vipSupport'), 
-        t('plans.features.backup'), 
-        t('plans.features.analytics')
+        'Controle completo de finanças',
+        'Relatórios básicos',
+        `Até ${config?.prices.annual.reminderLimit || 15} lembretes por mês`,
+        'Suporte por email',
+        'Desconto anual'
+      ],
+      popular: false,
+      planType: 'annual' as const,
+      reminderLimit: config?.prices.annual.reminderLimit || 15,
+    },
+    {
+      name: 'Plano Pro',
+      price: config?.prices.monthly_pro.displayPrice || 'R$ 29,90',
+      period: "/mês",
+      priceId: config?.prices.monthly_pro.priceId,
+      description: "Para usuários avançados",
+      features: [
+        'Controle completo de finanças',
+        'Relatórios avançados',
+        `Até ${config?.prices.monthly_pro.reminderLimit || 50} lembretes por mês`,
+        'Suporte prioritário',
+        'Análises detalhadas'
+      ],
+      planType: 'monthly_pro' as const,
+      reminderLimit: config?.prices.monthly_pro.reminderLimit || 50,
+    },
+    {
+      name: 'Plano Pro Anual',
+      price: config?.prices.annual_pro.displayPrice || 'R$ 299,90',
+      period: "/ano",
+      priceId: config?.prices.annual_pro.priceId,
+      originalPrice: config?.prices.annual_pro.displayOriginalPrice || 'R$ 358,80',
+      savings: config?.prices.annual_pro.displaySavings || 'Economize 16%',
+      description: "Máximo de recursos com desconto",
+      features: [
+        'Controle completo de finanças',
+        'Relatórios avançados',
+        `Até ${config?.prices.annual_pro.reminderLimit || 50} lembretes por mês`,
+        'Suporte prioritário',
+        'Análises detalhadas',
+        'Desconto anual'
       ],
       popular: true,
-      planType: 'annual' as const,
+      planType: 'annual_pro' as const,
+      reminderLimit: config?.prices.annual_pro.reminderLimit || 50,
     }
   ];
 
@@ -109,7 +142,7 @@ const PlansPage = () => {
         </div>
 
         {/* Plans Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
           {plans.map((plan) => (
             <PlanCard
               key={plan.planType}
@@ -123,6 +156,7 @@ const PlansPage = () => {
               features={plan.features}
               popular={plan.popular}
               planType={plan.planType}
+              reminderLimit={plan.reminderLimit}
             />
           ))}
         </div>
