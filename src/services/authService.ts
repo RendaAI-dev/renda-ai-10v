@@ -1,5 +1,61 @@
 import { supabase } from "@/integrations/supabase/client";
 
+// Mapear códigos de erro do Supabase para mensagens em português
+const mapAuthError = (error: any): string => {
+  if (!error) return 'Erro desconhecido';
+
+  // Rate limiting específico
+  if (error.code === 'over_email_send_rate_limit' || 
+      error.message?.includes('email rate limit exceeded') ||
+      error.message?.includes('rate limit')) {
+    return 'Muitas tentativas de cadastro. Aguarde alguns minutos antes de tentar novamente ou use um email diferente.';
+  }
+
+  // Outros códigos de erro comuns
+  switch (error.code) {
+    case 'email_address_invalid':
+    case 'invalid_email':
+      return 'Email inválido. Verifique o endereço informado.';
+    
+    case 'password_too_short':
+    case 'weak_password':
+      return 'A senha deve ter pelo menos 6 caracteres.';
+    
+    case 'user_already_exists':
+    case 'email_address_already_in_use':
+      return 'Este email já está cadastrado. Tente fazer login.';
+    
+    case 'signup_disabled':
+      return 'Cadastro temporariamente desabilitado. Tente novamente mais tarde.';
+    
+    case 'email_not_confirmed':
+      return 'Confirme seu email antes de fazer login.';
+    
+    case 'invalid_credentials':
+      return 'Email ou senha incorretos.';
+    
+    case 'too_many_requests':
+      return 'Muitas tentativas de login. Aguarde alguns minutos.';
+      
+    default:
+      // Verificar mensagens específicas
+      if (error.message?.includes('Invalid login credentials')) {
+        return 'Email ou senha incorretos.';
+      }
+      if (error.message?.includes('Email not confirmed')) {
+        return 'Confirme seu email antes de fazer login.';
+      }
+      if (error.message?.includes('User already registered')) {
+        return 'Este email já está cadastrado. Tente fazer login.';
+      }
+      if (error.message?.includes('signup is disabled')) {
+        return 'Cadastro temporariamente desabilitado. Tente novamente mais tarde.';
+      }
+      
+      return error.message || 'Erro de autenticação. Tente novamente.';
+  }
+};
+
 // Rate limiting for login attempts
 const loginAttempts = new Map<string, { count: number; lastAttempt: number }>();
 const MAX_LOGIN_ATTEMPTS = 5;
@@ -124,20 +180,9 @@ export const registerUser = async (email: string, password: string, name?: strin
     if (error) {
       console.error('Erro no registro:', error);
       
-      // Melhor tratamento de erros específicos
-      if (error.message === 'User already registered') {
-        throw new Error('Este email já está cadastrado');
-      } else if (error.message === 'Signup is disabled') {
-        throw new Error('Cadastro temporariamente desabilitado');
-      } else if (error.message === 'Invalid email') {
-        throw new Error('Email inválido');
-      } else if (error.message?.includes('Password should be at least 6 characters')) {
-        throw new Error('A senha deve ter pelo menos 6 caracteres');
-      } else if (error.message?.includes('rate limit')) {
-        throw new Error('Muitas tentativas. Aguarde alguns minutos.');
-      }
-      
-      throw error;
+      // Usar a nova função de mapeamento de erros
+      const friendlyMessage = mapAuthError(error);
+      throw new Error(friendlyMessage);
     }
 
     console.log('AuthService: Registro bem-sucedido');

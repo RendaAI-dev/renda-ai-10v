@@ -45,8 +45,46 @@ const RegisterPage = () => {
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [isLoadingAddress, setIsLoadingAddress] = useState(false);
+  const [rateLimitCooldown, setRateLimitCooldown] = useState(0);
+  const [lastAttemptTime, setLastAttemptTime] = useState<number>(0);
+
+  // Hook para atualizar o cooldown timer
+  const [cooldownDisplay, setCooldownDisplay] = useState<string>('');
 
   const priceId = searchParams.get('priceId');
+
+  // Atualizar display do cooldown
+  React.useEffect(() => {
+    if (rateLimitCooldown === 0) {
+      setCooldownDisplay('');
+      return;
+    }
+
+    const updateCooldown = () => {
+      const now = Date.now();
+      const remainingTime = Math.max(0, lastAttemptTime + rateLimitCooldown - now);
+      
+      if (remainingTime <= 0) {
+        setRateLimitCooldown(0);
+        setCooldownDisplay('');
+        return;
+      }
+
+      const minutes = Math.floor(remainingTime / 60000);
+      const seconds = Math.floor((remainingTime % 60000) / 1000);
+      
+      if (minutes > 0) {
+        setCooldownDisplay(`${minutes}m ${seconds}s`);
+      } else {
+        setCooldownDisplay(`${seconds}s`);
+      }
+    };
+
+    updateCooldown();
+    const interval = setInterval(updateCooldown, 1000);
+
+    return () => clearInterval(interval);
+  }, [rateLimitCooldown, lastAttemptTime]);
 
   // Função simplificada para aguardar sessão
   const waitForSession = async (): Promise<boolean> => {
@@ -149,8 +187,23 @@ const RegisterPage = () => {
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+    
+    // Verificar se está em cooldown de rate limit
+    const now = Date.now();
+    if (rateLimitCooldown > 0 && now < lastAttemptTime + rateLimitCooldown) {
+      const remainingTime = Math.ceil((lastAttemptTime + rateLimitCooldown - now) / 1000);
+      setError(`Aguarde ${remainingTime} segundos antes de tentar novamente.`);
+      return;
+    }
+    
+    // Prevenir múltiplas submissões simultâneas
+    if (isLoading) {
+      return;
+    }
+    
     setIsLoading(true);
     setError(null);
+    setLastAttemptTime(now);
     
     // Adicionar classe de loading ao formulário
     const formElement = document.getElementById('register-form');
@@ -346,18 +399,36 @@ const RegisterPage = () => {
     } catch (err: any) {
       console.error('Erro no processo de registro:', err);
       
-      // Tratar diferentes tipos de erro
-      if (err.message?.includes('Email rate limit exceeded')) {
-        setError('Muitas tentativas. Aguarde alguns minutos antes de tentar novamente.');
-      } else if (err.message?.includes('User already registered')) {
-        setError('Este email já está cadastrado. Tente fazer login.');
+      // Tratar rate limiting especificamente
+      if (err.message?.includes('email rate limit exceeded') || err.code === 'over_email_send_rate_limit') {
+        // Implementar cooldown exponencial
+        const cooldownTime = rateLimitCooldown === 0 ? 60000 : Math.min(rateLimitCooldown * 2, 300000); // 1 min para 5 min máximo
+        setRateLimitCooldown(cooldownTime);
+        
+        const minutes = Math.ceil(cooldownTime / 60000);
+        setError(`Limite de envio de emails atingido. Aguarde ${minutes} minuto(s) antes de tentar novamente. Use um email diferente se necessário.`);
+        
+        // Sugerir alternativas
+        toast({
+          title: "Limite de emails atingido",
+          description: `Tente novamente em ${minutes} minuto(s) ou use um email diferente.`,
+          variant: "destructive",
+        });
+      } else if (err.message?.includes('User already registered') || err.message?.includes('already been registered')) {
+        setError('Este email já está cadastrado. Você será redirecionado para o login.');
+        toast({
+          title: "Email já cadastrado",
+          description: "Redirecionando para a página de login...",
+        });
         setTimeout(() => navigate('/login', { state: { email } }), 2000);
       } else if (err.message?.includes('Invalid email')) {
         setError('Email inválido. Verifique o endereço informado.');
       } else if (err.message?.includes('Password should be at least 6 characters')) {
         setError('A senha deve ter pelo menos 6 caracteres.');
+      } else if (err.message?.includes('signup is disabled')) {
+        setError('Cadastro temporariamente desabilitado. Tente novamente mais tarde.');
       } else {
-        setError(err.message || 'Erro ao criar conta. Tente novamente.');
+        setError(err.message || 'Erro ao criar conta. Tente novamente em alguns minutos.');
       }
       
       setIsLoading(false);
@@ -657,7 +728,27 @@ const RegisterPage = () => {
           </Card>
 
           <div>
-            <Button type="submit" className="w-full" disabled={isLoading}>
+            {rateLimitCooldown > 0 && cooldownDisplay && (
+              <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 mb-4">
+                <div className="flex items-center">
+                  <div className="flex-shrink-0">
+                    <svg className="h-5 w-5 text-amber-400" viewBox="0 0 20 20" fill="currentColor">
+                      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clipRule="evenodd" />
+                    </svg>
+                  </div>
+                  <div className="ml-3">
+                    <p className="text-sm text-amber-800">
+                      <strong>Aguarde {cooldownDisplay}</strong> antes de tentar novamente ou use um email diferente.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
+            <Button 
+              type="submit" 
+              className="w-full" 
+              disabled={isLoading || (rateLimitCooldown > 0 && Date.now() < lastAttemptTime + rateLimitCooldown)}
+            >
               {isLoading ? 'Criando conta...' : 'Criar Conta e Ir para Pagamento'}
             </Button>
           </div>
