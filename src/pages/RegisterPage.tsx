@@ -7,7 +7,7 @@ import { Label } from '@/components/ui/label';
 import { useToast } from "@/hooks/use-toast";
 import { getPlanTypeFromPriceId } from '@/utils/subscriptionUtils';
 import { useBrandingConfig } from '@/hooks/useBrandingConfig';
-import { validateCPF, formatCPF, cleanCPF, validateAge } from "@/utils/cpfValidation";
+import { validateCPF, formatCPF, cleanCPF, validateAge, validateUniqueCPF } from "@/utils/cpfValidation";
 
 const RegisterPage = () => {
   const [searchParams] = useSearchParams();
@@ -112,6 +112,14 @@ const RegisterPage = () => {
       // Validar CPF se fornecido
       if (cpf && !validateCPF(cpf)) {
         setError("CPF inválido. Por favor, verifique o número digitado.");
+        setIsLoading(false);
+        formElement?.classList.remove('form-loading');
+        return;
+      }
+
+      // Verificar se CPF já está cadastrado
+      if (cpf && !(await validateUniqueCPF(cpf))) {
+        setError("Este CPF já está cadastrado no sistema.");
         setIsLoading(false);
         formElement?.classList.remove('form-loading');
         return;
