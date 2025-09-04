@@ -4,10 +4,21 @@ import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from "@/hooks/use-toast";
 import { getPlanTypeFromPriceId } from '@/utils/subscriptionUtils';
 import { useBrandingConfig } from '@/hooks/useBrandingConfig';
 import { validateCPF, formatCPF, cleanCPF, validateAge, validateUniqueCPF } from "@/utils/cpfValidation";
+import { 
+  validateZipCode, 
+  formatZipCode, 
+  cleanZipCode, 
+  fetchAddressByZipCode, 
+  validateAddress, 
+  BRAZILIAN_STATES,
+  Address 
+} from "@/utils/addressValidation";
 
 const RegisterPage = () => {
   const [searchParams] = useSearchParams();
@@ -21,8 +32,19 @@ const RegisterPage = () => {
   const [whatsapp, setWhatsapp] = useState('');
   const [cpf, setCpf] = useState('');
   const [birthDate, setBirthDate] = useState('');
+  
+  // Campos de endereço
+  const [zipCode, setZipCode] = useState('');
+  const [street, setStreet] = useState('');
+  const [number, setNumber] = useState('');
+  const [complement, setComplement] = useState('');
+  const [neighborhood, setNeighborhood] = useState('');
+  const [city, setCity] = useState('');
+  const [state, setState] = useState('');
+  
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [isLoadingAddress, setIsLoadingAddress] = useState(false);
 
   const priceId = searchParams.get('priceId');
 
@@ -89,6 +111,40 @@ const RegisterPage = () => {
     setCpf(formattedValue);
   };
 
+  // Função para lidar com a mudança no campo de CEP
+  const handleZipCodeChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const formattedValue = formatZipCode(e.target.value);
+    setZipCode(formattedValue);
+
+    // Se o CEP estiver completo, buscar o endereço
+    const cleanedZipCode = cleanZipCode(formattedValue);
+    if (cleanedZipCode.length === 8) {
+      setIsLoadingAddress(true);
+      try {
+        const addressData = await fetchAddressByZipCode(cleanedZipCode);
+        if (addressData) {
+          setStreet(addressData.street || '');
+          setNeighborhood(addressData.neighborhood || '');
+          setCity(addressData.city || '');
+          setState(addressData.state || '');
+          
+          toast({
+            title: "Endereço encontrado!",
+            description: "Os campos foram preenchidos automaticamente.",
+          });
+        }
+      } catch (error: any) {
+        toast({
+          title: "Erro ao buscar endereço",
+          description: error.message || "CEP não encontrado",
+          variant: "destructive",
+        });
+      } finally {
+        setIsLoadingAddress(false);
+      }
+    }
+  };
+
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setIsLoading(true);
@@ -109,17 +165,36 @@ const RegisterPage = () => {
     }
   
     try {
-      // Validar CPF se fornecido
-      if (cpf && !validateCPF(cpf)) {
-        setError("CPF inválido. Por favor, verifique o número digitado.");
+      // Validar CPF obrigatório
+      if (!cpf || !validateCPF(cpf)) {
+        setError("CPF é obrigatório e deve ser válido.");
         setIsLoading(false);
         formElement?.classList.remove('form-loading');
         return;
       }
 
       // Verificar se CPF já está cadastrado
-      if (cpf && !(await validateUniqueCPF(cpf))) {
+      if (!(await validateUniqueCPF(cpf))) {
         setError("Este CPF já está cadastrado no sistema.");
+        setIsLoading(false);
+        formElement?.classList.remove('form-loading');
+        return;
+      }
+
+      // Validar campos de endereço obrigatórios
+      const addressData: Partial<Address> = {
+        zipCode,
+        street,
+        number,
+        complement,
+        neighborhood,
+        city,
+        state,
+      };
+
+      const addressErrors = validateAddress(addressData);
+      if (addressErrors.length > 0) {
+        setError(addressErrors[0]);
         setIsLoading(false);
         formElement?.classList.remove('form-loading');
         return;
@@ -141,13 +216,17 @@ const RegisterPage = () => {
       const userData: any = {
         full_name: fullName,
         phone: formattedPhone,
+        cpf: cleanCPF(cpf),
+        street: street.trim(),
+        number: number.trim(),
+        complement: complement.trim() || null,
+        neighborhood: neighborhood.trim(),
+        city: city.trim(),
+        state: state.trim(),
+        zip_code: cleanZipCode(zipCode),
       };
 
-      // Adicionar CPF e data de nascimento se fornecidos
-      if (cpf) {
-        userData.cpf = cleanCPF(cpf);
-      }
-
+      // Adicionar data de nascimento se fornecida
       if (birthDate) {
         userData.birth_date = birthDate;
       }
@@ -264,12 +343,12 @@ const RegisterPage = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background via-muted/20 to-background flex flex-col items-center justify-center p-4">
+    <div className="min-h-screen bg-gradient-to-br from-background via-muted/20 to-background flex flex-col items-center justify-center p-4 py-8">
       {/* Renderizar o LoadingOverlay fora do container do formulário */}
       {isLoading && <LoadingOverlay />}
       
       {/* Container do formulário com largura máxima e sombra */}
-      <div className="w-full max-w-md bg-card p-8 rounded-xl shadow-2xl relative">
+      <div className="w-full max-w-2xl bg-card p-8 rounded-xl shadow-2xl relative">
         {/* Logo e Título Centralizados */}
         <div className="flex flex-col items-center mb-8">
           {/* Logo */}
@@ -305,106 +384,232 @@ const RegisterPage = () => {
         )}
 
         <form id="register-form" onSubmit={handleSubmit} className="space-y-6">
-          <div>
-            <Label htmlFor="fullName">Nome Completo</Label>
-            <Input
-              id="fullName"
-              name="fullName"
-              type="text"
-              autoComplete="name"
-              required
-              placeholder="Digite seu nome completo"
-              value={fullName}
-              onChange={(e) => setFullName(e.target.value)}
-              className="mt-1"
-            />
-          </div>
+          {/* Seção: Dados Pessoais */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg">Dados Pessoais</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div>
+                <Label htmlFor="fullName">Nome Completo</Label>
+                <Input
+                  id="fullName"
+                  name="fullName"
+                  type="text"
+                  autoComplete="name"
+                  required
+                  placeholder="Digite seu nome completo"
+                  value={fullName}
+                  onChange={(e) => setFullName(e.target.value)}
+                  className="mt-1"
+                />
+              </div>
 
-          <div>
-            <Label htmlFor="email">Email</Label>
-            <Input
-              id="email"
-              name="email"
-              type="email"
-              autoComplete="email"
-              required
-              placeholder="seuemail@exemplo.com"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              className="mt-1"
-            />
-          </div>
+              <div>
+                <Label htmlFor="email">Email</Label>
+                <Input
+                  id="email"
+                  name="email"
+                  type="email"
+                  autoComplete="email"
+                  required
+                  placeholder="seuemail@exemplo.com"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  className="mt-1"
+                />
+              </div>
 
-          <div>
-            <Label htmlFor="whatsapp">WhatsApp</Label>
-            <Input
-              id="whatsapp"
-              name="whatsapp"
-              type="tel"
-              autoComplete="tel"
-              required
-              placeholder="(XX) XXXXX-XXXX"
-              value={whatsapp}
-              onChange={handleWhatsappChange}
-              className="mt-1"
-              maxLength={16}
-            />
-            <p className="mt-2 text-xs text-gray-500">
-              Este número será utilizado para enviar mensagens e notificações importantes via WhatsApp.
-            </p>
-          </div>
+              <div>
+                <Label htmlFor="whatsapp">WhatsApp</Label>
+                <Input
+                  id="whatsapp"
+                  name="whatsapp"
+                  type="tel"
+                  autoComplete="tel"
+                  required
+                  placeholder="(XX) XXXXX-XXXX"
+                  value={whatsapp}
+                  onChange={handleWhatsappChange}
+                  className="mt-1"
+                  maxLength={16}
+                />
+                <p className="mt-2 text-xs text-gray-500">
+                  Este número será utilizado para enviar mensagens e notificações importantes via WhatsApp.
+                </p>
+              </div>
 
-          <div>
-            <Label htmlFor="cpf">
-              CPF <span className="text-muted-foreground text-sm">(opcional)</span>
-            </Label>
-            <Input
-              id="cpf"
-              name="cpf"
-              type="text"
-              placeholder="000.000.000-00"
-              value={cpf}
-              onChange={handleCpfChange}
-              className="mt-1"
-              maxLength={14}
-            />
-            {cpf && !validateCPF(cpf) && (
-              <p className="mt-1 text-xs text-red-600">CPF inválido</p>
-            )}
-          </div>
+              <div>
+                <Label htmlFor="cpf">CPF *</Label>
+                <Input
+                  id="cpf"
+                  name="cpf"
+                  type="text"
+                  required
+                  placeholder="000.000.000-00"
+                  value={cpf}
+                  onChange={handleCpfChange}
+                  className="mt-1"
+                  maxLength={14}
+                />
+                {cpf && !validateCPF(cpf) && (
+                  <p className="mt-1 text-xs text-red-600">CPF inválido</p>
+                )}
+              </div>
 
-          <div>
-            <Label htmlFor="birthDate">
-              Data de Nascimento <span className="text-muted-foreground text-sm">(opcional)</span>
-            </Label>
-            <Input
-              id="birthDate"
-              name="birthDate"
-              type="date"
-              value={birthDate}
-              onChange={(e) => setBirthDate(e.target.value)}
-              className="mt-1"
-              max={new Date(Date.now() - 18 * 365 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]}
-            />
-            {birthDate && !validateAge(birthDate) && (
-              <p className="mt-1 text-xs text-red-600">Você deve ter pelo menos 18 anos</p>
-            )}
-          </div>
+              <div>
+                <Label htmlFor="birthDate">
+                  Data de Nascimento <span className="text-muted-foreground text-sm">(opcional)</span>
+                </Label>
+                <Input
+                  id="birthDate"
+                  name="birthDate"
+                  type="date"
+                  value={birthDate}
+                  onChange={(e) => setBirthDate(e.target.value)}
+                  className="mt-1"
+                  max={new Date(Date.now() - 18 * 365 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]}
+                />
+                {birthDate && !validateAge(birthDate) && (
+                  <p className="mt-1 text-xs text-red-600">Você deve ter pelo menos 18 anos</p>
+                )}
+              </div>
 
-          <div>
-            <Label htmlFor="password">Senha</Label>
-            <Input
-              id="password"
-              name="password"
-              type="password"
-              autoComplete="new-password"
-              required
-              placeholder="Cadastre sua senha de acesso"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              className="mt-1"
-            />
-          </div>
+              <div>
+                <Label htmlFor="password">Senha</Label>
+                <Input
+                  id="password"
+                  name="password"
+                  type="password"
+                  autoComplete="new-password"
+                  required
+                  placeholder="Cadastre sua senha de acesso"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className="mt-1"
+                />
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Seção: Endereço */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg">Endereço</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div>
+                <Label htmlFor="zipCode">CEP *</Label>
+                <Input
+                  id="zipCode"
+                  name="zipCode"
+                  type="text"
+                  required
+                  placeholder="00000-000"
+                  value={zipCode}
+                  onChange={handleZipCodeChange}
+                  className="mt-1"
+                  maxLength={9}
+                  disabled={isLoadingAddress}
+                />
+                {isLoadingAddress && (
+                  <p className="mt-1 text-xs text-blue-600">Buscando endereço...</p>
+                )}
+                {zipCode && !validateZipCode(zipCode) && (
+                  <p className="mt-1 text-xs text-red-600">CEP inválido</p>
+                )}
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="col-span-2">
+                  <Label htmlFor="street">Logradouro *</Label>
+                  <Input
+                    id="street"
+                    name="street"
+                    type="text"
+                    required
+                    placeholder="Rua, Avenida, etc."
+                    value={street}
+                    onChange={(e) => setStreet(e.target.value)}
+                    className="mt-1"
+                  />
+                </div>
+
+                <div>
+                  <Label htmlFor="number">Número *</Label>
+                  <Input
+                    id="number"
+                    name="number"
+                    type="text"
+                    required
+                    placeholder="123"
+                    value={number}
+                    onChange={(e) => setNumber(e.target.value)}
+                    className="mt-1"
+                  />
+                </div>
+
+                <div>
+                  <Label htmlFor="complement">
+                    Complemento <span className="text-muted-foreground text-sm">(opcional)</span>
+                  </Label>
+                  <Input
+                    id="complement"
+                    name="complement"
+                    type="text"
+                    placeholder="Apto, Casa, etc."
+                    value={complement}
+                    onChange={(e) => setComplement(e.target.value)}
+                    className="mt-1"
+                  />
+                </div>
+
+                <div>
+                  <Label htmlFor="neighborhood">Bairro *</Label>
+                  <Input
+                    id="neighborhood"
+                    name="neighborhood"
+                    type="text"
+                    required
+                    placeholder="Nome do bairro"
+                    value={neighborhood}
+                    onChange={(e) => setNeighborhood(e.target.value)}
+                    className="mt-1"
+                  />
+                </div>
+
+                <div>
+                  <Label htmlFor="city">Cidade *</Label>
+                  <Input
+                    id="city"
+                    name="city"
+                    type="text"
+                    required
+                    placeholder="Nome da cidade"
+                    value={city}
+                    onChange={(e) => setCity(e.target.value)}
+                    className="mt-1"
+                  />
+                </div>
+
+                <div className="col-span-2">
+                  <Label htmlFor="state">Estado *</Label>
+                  <Select value={state} onValueChange={setState} required>
+                    <SelectTrigger className="mt-1">
+                      <SelectValue placeholder="Selecione o estado" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {BRAZILIAN_STATES.map((stateOption) => (
+                        <SelectItem key={stateOption.value} value={stateOption.value}>
+                          {stateOption.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
 
           <div>
             <Button type="submit" className="w-full" disabled={isLoading}>

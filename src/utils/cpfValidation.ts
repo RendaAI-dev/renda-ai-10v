@@ -61,12 +61,15 @@ export const formatCPF = (cpf: string): string => {
 /**
  * Validates if CPF is unique in the database
  * @param cpf - CPF string to validate
- * @returns Promise<boolean> - true if CPF is unique or empty
+ * @returns Promise<boolean> - true if CPF is unique, false if already exists or empty
  */
 export const validateUniqueCPF = async (cpf: string): Promise<boolean> => {
-  if (!cpf || cpf.trim() === '') return true; // Empty CPF is allowed
+  if (!cpf || cpf.trim() === '') return false; // Empty CPF is NOT allowed anymore
   
   const cleanedCPF = cleanCPF(cpf);
+  
+  // Additional validation - CPF must be valid format
+  if (cleanedCPF.length !== 11) return false;
   
   const { data, error } = await supabase
     .from('poupeja_users')
