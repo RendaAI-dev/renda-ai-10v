@@ -19,41 +19,41 @@ import CustomersTable from './analytics/CustomersTable';
 const AdminSectionTabs: React.FC = () => {
   return (
     <Tabs defaultValue="system" className="w-full">
-      <TabsList className="grid w-full grid-cols-9">
-        <TabsTrigger value="system" className="flex items-center gap-2">
-          <Database className="h-4 w-4" />
+      <TabsList className="grid w-full grid-cols-2 md:grid-cols-4 lg:grid-cols-9 gap-1">
+        <TabsTrigger value="system" className="flex items-center gap-1 text-xs lg:text-sm">
+          <Database className="h-3 w-3 lg:h-4 lg:w-4" />
           Sistema
         </TabsTrigger>
-        <TabsTrigger value="analytics" className="flex items-center gap-2">
-          <BarChart3 className="h-4 w-4" />
+        <TabsTrigger value="analytics" className="flex items-center gap-1 text-xs lg:text-sm">
+          <BarChart3 className="h-3 w-3 lg:h-4 lg:w-4" />
           Analytics
         </TabsTrigger>
-        <TabsTrigger value="subscriptions" className="flex items-center gap-2">
-          <Users className="h-4 w-4" />
+        <TabsTrigger value="subscriptions" className="flex items-center gap-1 text-xs lg:text-sm">
+          <Users className="h-3 w-3 lg:h-4 lg:w-4" />
           Assinaturas
         </TabsTrigger>
-        <TabsTrigger value="reminders" className="flex items-center gap-2">
-          <Bell className="h-4 w-4" />
+        <TabsTrigger value="reminders" className="flex items-center gap-1 text-xs lg:text-sm">
+          <Bell className="h-3 w-3 lg:h-4 lg:w-4" />
           Lembretes
         </TabsTrigger>
-        <TabsTrigger value="branding" className="flex items-center gap-2">
-          <Palette className="h-4 w-4" />
+        <TabsTrigger value="branding" className="flex items-center gap-1 text-xs lg:text-sm">
+          <Palette className="h-3 w-3 lg:h-4 lg:w-4" />
           Branding
         </TabsTrigger>
-        <TabsTrigger value="stripe" className="flex items-center gap-2">
-          <CreditCard className="h-4 w-4" />
+        <TabsTrigger value="stripe" className="flex items-center gap-1 text-xs lg:text-sm">
+          <CreditCard className="h-3 w-3 lg:h-4 lg:w-4" />
           Stripe
         </TabsTrigger>
-        <TabsTrigger value="pricing" className="flex items-center gap-2">
-          <DollarSign className="h-4 w-4" />
+        <TabsTrigger value="pricing" className="flex items-center gap-1 text-xs lg:text-sm">
+          <DollarSign className="h-3 w-3 lg:h-4 lg:w-4" />
           Planos
         </TabsTrigger>
-        <TabsTrigger value="contact" className="flex items-center gap-2">
-          <Phone className="h-4 w-4" />
+        <TabsTrigger value="contact" className="flex items-center gap-1 text-xs lg:text-sm">
+          <Phone className="h-3 w-3 lg:h-4 lg:w-4" />
           Contato
         </TabsTrigger>
-        <TabsTrigger value="pwa" className="flex items-center gap-2">
-          <Code className="h-4 w-4" />
+        <TabsTrigger value="pwa" className="flex items-center gap-1 text-xs lg:text-sm">
+          <Code className="h-3 w-3 lg:h-4 lg:w-4" />
           PWA
         </TabsTrigger>
       </TabsList>
