@@ -1,4 +1,5 @@
 // CPF validation and formatting utilities
+import { supabase } from '@/integrations/supabase/client';
 
 /**
  * Validates a Brazilian CPF number
@@ -65,7 +66,6 @@ export const formatCPF = (cpf: string): string => {
 export const validateUniqueCPF = async (cpf: string): Promise<boolean> => {
   if (!cpf || cpf.trim() === '') return true; // Empty CPF is allowed
   
-  const { supabase } = await import('@/integrations/supabase/client');
   const cleanedCPF = cleanCPF(cpf);
   
   const { data, error } = await supabase
